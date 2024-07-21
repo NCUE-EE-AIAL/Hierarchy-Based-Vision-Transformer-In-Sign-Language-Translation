@@ -17,8 +17,8 @@ def extract_frames(video_path, output_folder, frame_rate=1):
         count += 1
     print(f"Extracted frames from {video_path}")
 
-video_directory = r"D:\user\Downloads\train_rgb_front_clips\raw_videos"
-output_directory = r"D:\user\Downloads\train_rgb_front_clips\train_rgb_front_clips_output"
+video_directory = r"D:\user\Downloads\how2sign\test_rgb_front_clips\raw_videos"
+output_directory = r"D:\user\Downloads\how2sign\test_rgb_front_clips\test_rgb_front_clips_output"
 
 files = []
 output_dirs = []
@@ -33,4 +33,5 @@ if __name__ == "__main__":
     num_workers = 4
     length = len(files)
     with Pool(num_workers) as pool:
-        pool.starmap(extract_frames, [(files[i], output_dirs[i]) for i in range(length)])
+        # 30 -> 10 fps
+        pool.starmap(extract_frames, [(files[i], output_dirs[i], 3) for i in range(length)])
