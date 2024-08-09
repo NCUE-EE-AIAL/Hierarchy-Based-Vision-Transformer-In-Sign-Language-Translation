@@ -21,7 +21,11 @@ def find_files(directory, pattern='**/*.json', interval=1):
     files = glob(os.path.join(directory, pattern), recursive=True)
     return files[::interval]
 
+<<<<<<< Updated upstream
 
+=======
+# keypoints preprocessing function
+>>>>>>> Stashed changes
 def reduce_keypoints(person):
     reduced_person = {
         "person_id": person.get("person_id", [-1]),
@@ -82,11 +86,38 @@ def prep(main_dir, output_dir, num_workers=4):
         pool.starmap(extract_json, [(output_dir, subfolder_path) for subfolder_path in subfolders_path])
 
 
+# Video preprocessing function
+def extract_frames(video_path, output_folder, frame_rate=1):
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    vidcap = cv2.VideoCapture(video_path)
+    success, image = vidcap.read()
+    count = 0
+    while success:
+        if count % frame_rate == 0:
+            cv2.imwrite(f"{output_folder}/frame{count}.jpg", image)
+        success, image = vidcap.read()
+        count += 1
+    print(f"Extracted frames from {video_path}")
+
+def video_prep(vid_dir, output_dir, num_workers=4):
+    files = find_files(vid_dir, pattern='**/*.*')
+    output_dirs = [os.path.join(output_dir, os.path.basename(file).split('.')[0]) for file in files]
+
+    length = len(files)
+    with Pool(num_workers) as pool:
+        # 30 -> 10 fps
+        pool.starmap(extract_frames, [(files[i], output_dirs[i], 3) for i in range(length)])
+
+
 if __name__ == '__main__':
-    # Prompt the user to enter the path of the folder containing subfolders of JSON files
-    main_directory = input("Enter the path to the main folder containing subfolders with JSON files: ")
+    # video preprocessing
+    video_directory = input("Enter the path to the main folder containing subfolders with video files: ")
+    output_directory = input("Enter the path where the files will be saved: ")
+    video_prep(video_directory, output_directory)
 
-    # Prompt the user to enter the path where the reduced and merged JSON files will be saved
-    output_directory = input("Enter the path where the reduced and merged JSON files will be saved: ")
-
-    prep(main_directory, output_directory)
+    # keypoints preprocessing
+    keypoints_directory = input("Enter the path to the main folder containing subfolders with JSON files: ")
+    output_directory = input("Enter the path where the files will be saved: ")
+    prep(keypoints_directory, output_directory)
