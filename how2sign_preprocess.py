@@ -21,11 +21,8 @@ def find_files(directory, pattern='**/*.json', interval=1):
     files = glob(os.path.join(directory, pattern), recursive=True)
     return files[::interval]
 
-<<<<<<< Updated upstream
 
-=======
 # keypoints preprocessing function
->>>>>>> Stashed changes
 def reduce_keypoints(person):
     reduced_person = {
         "person_id": person.get("person_id", [-1]),
