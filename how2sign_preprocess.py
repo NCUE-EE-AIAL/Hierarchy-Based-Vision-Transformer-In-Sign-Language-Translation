@@ -22,7 +22,6 @@ def find_files(directory, pattern='**/*.json', interval=1):
     return files[::interval]
 
 
-# keypoints preprocessing function
 def reduce_keypoints(person):
     reduced_person = {
         "person_id": person.get("person_id", [-1]),
