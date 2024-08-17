@@ -7,5 +7,5 @@ csv_file = "how2sign_realigned_val.csv"
 dataset = How2signDataset(json_files=json_files, csv_file=csv_file)
 x, y = dataset.how2sign_keypoints_sentence()
 
-print(x)
-print(y)
+print(x.shape)
+print(y.shape)
