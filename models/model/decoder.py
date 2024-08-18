@@ -1,15 +1,11 @@
-"""
-@author : Hyunwoong
-@when : 2019-12-18
-@homepage : https://github.com/gusdnd852
-"""
 import torch
 from torch import nn
 
 from models.blocks.decoder_layer import DecoderLayer
 from models.embedding.transformer_embedding import TransformerEmbedding
 
-
+# not to use this class
+# split the embedding and decoder layer
 class Decoder(nn.Module):
     def __init__(self, image_size, image_patch_size, frames, frame_patch_size, dec_voc_size, max_len, d_model, ffn_hidden, n_head, n_layers, drop_prob, device):
         super().__init__()

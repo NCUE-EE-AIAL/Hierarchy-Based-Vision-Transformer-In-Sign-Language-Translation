@@ -10,6 +10,18 @@ def pair(t):
 
 class PatchEmbedding(nn.Embedding):
     def __init__(self, image_size, image_patch_size, frames, frame_patch_size, dim, channels = 1):
+        """
+        Args:
+            image_size (tuple): dimensions of the image
+            image_patch_size (tuple): dimensions of the image patch
+            frames (int): number of frames
+            frame_patch_size (int): number of patches in a frame
+            dim (int): embedding dimension
+            channels (int): number of channels in the image
+
+        Returns:
+            nn.Embedding: embedding layer shaped as (batch, num_patches, dim)
+        """
 
         image_height, image_width = pair(image_size)
         patch_height, patch_width = pair(image_patch_size)

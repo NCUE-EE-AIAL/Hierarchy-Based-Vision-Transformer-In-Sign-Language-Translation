@@ -2,6 +2,19 @@ from torch import nn
 import torch
 from torch.nn.init import trunc_normal_
 
+def window_partition(x, window_size):
+    """
+    Args:
+        x: (B, N, C)
+        window_size (int): window frame size
+
+    Returns:
+        windows: (num_windows*B, window_size, C)
+    """
+    B, N, C = x.shape
+    x = x.view(B, N // window_size, window_size, C)
+    windows = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(-1, window_size, C)
+    return windows
 
 class WindowAttention(nn.Module):
     r""" Window based multi-head self attention

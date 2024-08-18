@@ -1,8 +1,3 @@
-"""
-@author : Hyunwoong
-@when : 2019-10-25
-@homepage : https://github.com/gusdnd852
-"""
 from torch import nn
 
 from models.layers.scale_dot_product_attention import ScaleDotProductAttention

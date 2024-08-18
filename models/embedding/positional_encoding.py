@@ -1,16 +1,7 @@
-"""
-@author : Hyunwoong
-@when : 2019-10-22
-@homepage : https://github.com/gusdnd852
-"""
 import torch
 from torch import nn
 
 class PositionalEncoding(nn.Module):
-    """
-    Learned positional encoding similar to ViT.
-    """
-
     def __init__(self, d_model, max_len, device):
         """
         constructor of positional encoding class
@@ -29,4 +20,4 @@ class PositionalEncoding(nn.Module):
         batch_size, n, d_model = x.size()
 
         # Ensure pos_embedding has the same device and dtype as x
-        return self.pos_embedding[:, :(n+1)]
+        return self.pos_embedding[:, :n]

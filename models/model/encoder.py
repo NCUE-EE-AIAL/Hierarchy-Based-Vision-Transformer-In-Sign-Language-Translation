@@ -1,14 +1,11 @@
-"""
-@author : Hyunwoong
-@when : 2019-12-18
-@homepage : https://github.com/gusdnd852
-"""
 from torch import nn
 
 from models.blocks.encoder_layer import EncoderLayer
 from models.embedding.transformer_embedding import TransformerEmbedding
 
 
+# not to use this class
+# split the embedding and encoder layer
 class Encoder(nn.Module):
 
     def __init__(self,image_size, image_patch_size, frames, frame_patch_size, max_len, d_model, ffn_hidden, n_head, n_layers, drop_prob, device):
