@@ -16,6 +16,23 @@ def window_partition(x, window_size):
     windows = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(-1, window_size, C)
     return windows
 
+
+def window_reverse(windows, window_size, N):
+    """
+    Args:
+        windows: (num_windows*B, window_size, window_size, C)  # Tensor of windows flattened across the batch
+        window_size (int): Window size  # Size of the windows
+        N (int): length of the original image
+
+    Returns:
+        x: (B, N, C)  # Reconstructed tensor with shape (Batch size, Height, Width, Channels)
+    """
+    B = int(windows.shape[0] / (N / window_size))
+    x = windows.view(B, N // window_size,window_size, -1)
+    x = x.contiguous().view(B, N, -1)
+    return x
+
+
 class WindowAttention(nn.Module):
     r""" Window based multi-head self attention
 
@@ -29,8 +46,7 @@ class WindowAttention(nn.Module):
         proj_drop (float, optional): Dropout ratio of output. Default: 0.0
     """
 
-    def __init__(self, dim, num_heads, qkv_bias=True, qk_scale=None, attn_drop=0., proj_drop=0.):
-
+    def __init__(self, dim, num_heads, qkv_bias=True, qk_scale=None, attn_drop=0.1, proj_drop=0.1):
         super().__init__()
         self.dim = dim
         self.num_heads = num_heads
