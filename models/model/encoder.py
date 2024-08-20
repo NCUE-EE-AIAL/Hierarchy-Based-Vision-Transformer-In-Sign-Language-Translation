@@ -13,7 +13,7 @@ class Encoder(nn.Module):
         super().__init__()
         self.emb = TransformerEmbedding(image_size=image_size,
                                         image_patch_size=image_patch_size,
-                                        frames=max_frames,
+                                        max_frames=max_frames,
                                         frame_patch_size=frame_patch_size,
                                         d_model=d_model,
                                         drop_prob=drop_prob,
@@ -56,6 +56,7 @@ if __name__ == '__main__':
     n_head = 8
     drop_prob = 0.1
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    torch.set_default_device(device)
 
     # Initialize and test the Encoder model
     model = Encoder(image_size, image_patch_size, max_frames, frame_patch_size, d_model, ffn_hidden, n_head, drop_prob, device)

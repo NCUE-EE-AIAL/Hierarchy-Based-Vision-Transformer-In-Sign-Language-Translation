@@ -18,7 +18,7 @@ class TransformerEmbedding(nn.Module):
         :param d_model: dimensions of model
         """
         super().__init__()
-        self.tok_emb = PatchEmbedding(image_size, image_patch_size, max_frames, frame_patch_size, d_model)
+        self.tok_emb = PatchEmbedding(image_size, image_patch_size, max_frames, frame_patch_size, d_model, device=device)
         self.pos_emb = PositionalEncoding(d_model, max_frames, device)
         self.drop_out = nn.Dropout(p=drop_prob)
 
