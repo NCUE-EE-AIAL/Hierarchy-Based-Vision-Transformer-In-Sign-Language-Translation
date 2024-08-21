@@ -7,13 +7,13 @@ from models.layers.Mlp import Mlp
 
 class EncoderLayer(nn.Module):
 
-    def __init__(self, d_model, ffn_hidden, n_head, drop_prob):
+    def __init__(self, dim, ffn_hidden, n_head, drop_prob):
         super().__init__()
-        self.window_attention = WindowAttention(dim=d_model, num_heads=n_head, attn_drop=drop_prob, proj_drop=drop_prob)
-        self.norm1 = LayerNorm(d_model=d_model)
+        self.window_attention = WindowAttention(dim=dim, num_heads=n_head, attn_drop=drop_prob, proj_drop=drop_prob)
+        self.norm1 = LayerNorm(dim=dim)
 
-        self.ffn = Mlp(in_features=d_model, hidden_features=ffn_hidden, drop=drop_prob)
-        self.norm2 = LayerNorm(d_model=d_model)
+        self.ffn = Mlp(in_features=dim, hidden_features=ffn_hidden, drop=drop_prob)
+        self.norm2 = LayerNorm(dim=dim)
 
     def forward(self, x, window_size):
         # window partition

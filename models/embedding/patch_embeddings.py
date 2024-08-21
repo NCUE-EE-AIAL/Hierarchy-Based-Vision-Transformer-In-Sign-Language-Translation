@@ -1,5 +1,5 @@
 from torch import nn
-from torch import nn
+import torch
 
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
@@ -9,7 +9,7 @@ def pair(t):
     return t if isinstance(t, tuple) else (t, t)
 
 class PatchEmbedding(nn.Module):
-    def __init__(self, image_size, image_patch_size, max_frames, frame_patch_size, dim, channels=1, device=None):
+    def __init__(self, image_size, image_patch_size, max_frames, frame_patch_size, dim, channels=1, drop_prob=0.1, device=None):
         """
         Args:
             image_size (tuple[int]): dimensions of the image shaped as (height, width)
@@ -40,8 +40,14 @@ class PatchEmbedding(nn.Module):
             nn.LayerNorm(dim),
         )
 
+        self.pos_embedding = nn.Parameter(torch.randn(1, max_frames, dim, device=device))
+
+        self.drop_out = nn.Dropout(p=drop_prob)
+
     def forward(self, x):
         x = x.to(self.device)
-        x = self.to_patch_embedding(x)
-        print("after patch embedding", x.shape)
-        return x
+        patch_emb = self.to_patch_embedding(x)
+
+        batch_size, n, d_model = patch_emb.size()
+        pos_emb = self.pos_embedding[:, :n, :]
+        return self.drop_out(patch_emb + pos_emb)

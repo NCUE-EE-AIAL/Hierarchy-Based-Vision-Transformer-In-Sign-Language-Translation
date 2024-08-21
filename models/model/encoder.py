@@ -2,30 +2,27 @@ from torch import nn
 import torch
 
 from models.blocks.encoder_layer import EncoderLayer
-from models.embedding.transformer_embedding import TransformerEmbedding
+from models.embedding.patch_embeddings import PatchEmbedding
 
 
 # not to use this class
 # split the embedding and encoder layer
 class Encoder(nn.Module):
 
-    def __init__(self,image_size, image_patch_size, max_frames, frame_patch_size, d_model, ffn_hidden, n_head, drop_prob, device):
+    def __init__(self,image_size, image_patch_size, max_frames, frame_patch_size, dim, ffn_hidden, n_head, drop_prob, device):
         super().__init__()
-        self.emb = TransformerEmbedding(image_size=image_size,
-                                        image_patch_size=image_patch_size,
-                                        max_frames=max_frames,
-                                        frame_patch_size=frame_patch_size,
-                                        d_model=d_model,
-                                        drop_prob=drop_prob,
-                                        device=device)
+        self.emb = PatchEmbedding(image_size=image_size,
+                                  image_patch_size=image_patch_size,
+                                  max_frames=max_frames,
+                                  frame_patch_size=frame_patch_size,
+                                  dim=dim,
+                                  drop_prob=drop_prob,
+                                  device=device)
 
-        # self.layers = nn.ModuleList([EncoderLayer(d_model=d_model,
-        #                                           ffn_hidden=ffn_hidden,
-        #                                           n_head=n_head,
-        #                                           drop_prob=drop_prob)
-        #                              for _ in range(n_layers)])
-
-        self.layer = EncoderLayer(d_model=d_model, ffn_hidden=ffn_hidden, n_head=n_head, drop_prob=drop_prob)
+        self.layer = EncoderLayer(dim=dim,
+                                  ffn_hidden=ffn_hidden,
+                                  n_head=n_head,
+                                  drop_prob=drop_prob)
 
 
     def forward(self, x):
@@ -41,6 +38,7 @@ class Encoder(nn.Module):
             x = self.layer(x, window_size=512)
 
         return x
+
 
 if __name__ == '__main__':
     # Initialize random input tensor with shape (batch_size, channels, frames, height, width)
