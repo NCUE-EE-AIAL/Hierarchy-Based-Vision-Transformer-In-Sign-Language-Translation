@@ -47,7 +47,5 @@ class PatchEmbedding(nn.Module):
     def forward(self, x):
         x = x.to(self.device)
         patch_emb = self.to_patch_embedding(x)
-
-        batch_size, n, d_model = patch_emb.size()
-        pos_emb = self.pos_embedding[:, :n, :]
+        pos_emb = self.pos_embedding[:, :patch_emb.size(1), :]
         return self.drop_out(patch_emb + pos_emb)
