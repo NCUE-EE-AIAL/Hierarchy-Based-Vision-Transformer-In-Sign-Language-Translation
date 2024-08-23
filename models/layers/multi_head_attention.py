@@ -1,39 +1,7 @@
 from torch import nn
-import torch
-from torch.nn.init import trunc_normal_
-
-def window_partition(x, window_size):
-    """
-    Args:
-        x: (B, N, C)
-        window_size (int): window frame size
-
-    Returns:
-        windows: (num_windows*B, window_size, C)
-    """
-    B, N, C = x.shape
-    x = x.view(B, N // window_size, window_size, C)
-    windows = x.contiguous().view(-1, window_size, C)
-    return windows
 
 
-def window_reverse(windows, window_size, N):
-    """
-    Args:
-        windows: (num_windows*B, window_size, window_size, C)  # Tensor of windows flattened across the batch
-        window_size (int): Window size  # Size of the windows
-        N (int): length of the original image
-
-    Returns:
-        x: (B, N, C)  # Reconstructed tensor with shape (Batch size, Height, Width, Channels)
-    """
-    B = int(windows.shape[0] / (N / window_size))
-    x = windows.view(B, N // window_size,window_size, -1)
-    x = x.contiguous().view(B, N, -1)
-    return x
-
-
-class WindowAttention(nn.Module):
+class MultiHeadAttention(nn.Module):
     r""" Window based multi-head self attention
 
     Args:
@@ -46,7 +14,7 @@ class WindowAttention(nn.Module):
         proj_drop (float, optional): Dropout ratio of output. Default: 0.0
     """
 
-    def __init__(self, dim, num_heads, qkv_bias=True, qk_scale=None, attn_drop=0.1, proj_drop=0.1):
+    def __init__(self, dim, num_heads, drop_prob, qkv_bias=True, qk_scale=None):
         super().__init__()
         self.dim = dim
         self.num_heads = num_heads
@@ -57,13 +25,13 @@ class WindowAttention(nn.Module):
         self.w_k = nn.Linear(dim, dim, bias=qkv_bias)
         self.w_v = nn.Linear(dim, dim, bias=qkv_bias)
 
-        self.attn_drop = nn.Dropout(attn_drop)
+        self.attn_drop = nn.Dropout(drop_prob)
         self.proj = nn.Linear(dim, dim)
-        self.proj_drop = nn.Dropout(proj_drop)
+        self.proj_drop = nn.Dropout(drop_prob)
 
         self.softmax = nn.Softmax(dim=-1)
 
-    def forward(self, q, k ,v):
+    def forward(self, q, k ,v, mask=None):
         """
         Args:
             q, k, v: input features with shape of (num_windows*B, N, C)
@@ -76,6 +44,9 @@ class WindowAttention(nn.Module):
 
         q = q * self.scale
         attn = (q @ k.transpose(-2, -1))
+
+        if mask is not None:
+            attn = attn.masked_fill(mask == 0, -10000)
 
         attn = self.softmax(attn)
         attn = self.attn_drop(attn)

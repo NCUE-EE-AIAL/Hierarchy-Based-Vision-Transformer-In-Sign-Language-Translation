@@ -1,18 +1,19 @@
 from torch import nn
 
 from models.layers.layer_norm import LayerNorm
-from models.layers.window_attention import WindowAttention, window_partition, window_reverse
+from models.layers.multi_head_attention import MultiHeadAttention
 from models.layers.Mlp import Mlp
+from models.utils import window_partition, window_reverse
 
 
 class EncoderLayer(nn.Module):
 
     def __init__(self, dim, ffn_hidden, n_head, drop_prob):
         super().__init__()
-        self.window_attention = WindowAttention(dim=dim, num_heads=n_head, attn_drop=drop_prob, proj_drop=drop_prob)
+        self.window_attention = MultiHeadAttention(dim=dim, num_heads=n_head, drop_prob=drop_prob)
         self.norm1 = LayerNorm(dim=dim)
 
-        self.ffn = Mlp(in_features=dim, hidden_features=ffn_hidden, drop=drop_prob)
+        self.mlp = Mlp(in_features=dim, hidden_features=ffn_hidden, drop=drop_prob)
         self.norm2 = LayerNorm(dim=dim)
 
     def forward(self, x, window_size):
@@ -29,7 +30,7 @@ class EncoderLayer(nn.Module):
         
         # positionwise feed forward network
         _x = x
-        x = self.ffn(x)
+        x = self.mlp(x)
       
         # add and norm
         x = self.norm2(x + _x)
