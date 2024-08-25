@@ -36,22 +36,26 @@ class MultiHeadAttention(nn.Module):
         Args:
             q, k, v: input features with shape of (num_windows*B, N, C)
         """
-        B_, N, C = k.shape
+        B_, N_q, C = q.shape
+        _, N_k, _ = k.shape
 
-        q = self.w_q(q).reshape(B_, N, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
-        k = self.w_k(k).reshape(B_, N, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
-        v = self.w_v(v).reshape(B_, N, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
+        q = self.w_q(q).reshape(B_, N_q, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
+        k = self.w_k(k).reshape(B_, N_k, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
+        v = self.w_v(v).reshape(B_, N_k, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
 
         q = q * self.scale
         attn = (q @ k.transpose(-2, -1))
 
         if mask is not None:
+            mask = mask.unsqueeze(1).unsqueeze(2)
+            print("q shape: ", q.shape)
+            print("mask after unsqueeze: ", mask.shape)
             attn = attn.masked_fill(mask == 0, -10000)
 
         attn = self.softmax(attn)
         attn = self.attn_drop(attn)
 
-        x = (attn @ v).transpose(1, 2).reshape(B_, N, C)
+        x = (attn @ v).transpose(1, 2).reshape(B_, N_q, C)
         x = self.proj(x)
         x = self.proj_drop(x)
         return x

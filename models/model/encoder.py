@@ -28,36 +28,15 @@ class Encoder(nn.Module):
     def forward(self, x):
         x = self.emb(x)
 
-        for i in range(2):
+        for i in range(1):
             x = self.layer(x, window_size=64)
-        for i in range(6):
+        for i in range(1):
             x = self.layer(x, window_size=128)
-        for i in range(2):
+        for i in range(1):
             x = self.layer(x, window_size=256)
-        for i in range(2):
+        for i in range(1):
             x = self.layer(x, window_size=512)
 
         return x
 
 
-if __name__ == '__main__':
-    # Initialize random input tensor with shape (batch_size, channels, frames, height, width)
-    input_tensor = torch.rand(32, 1, 512, 1, 183)
-
-    # Define model parameters
-    image_size = (1, 183)
-    image_patch_size = (1, 183)
-    max_frames = 512
-    frame_patch_size = 1
-    d_model = 128
-    ffn_hidden = 2048
-    n_head = 8
-    drop_prob = 0.1
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    torch.set_default_device(device)
-
-    # Initialize and test the Encoder model
-    model = Encoder(image_size, image_patch_size, max_frames, frame_patch_size, d_model, ffn_hidden, n_head, drop_prob, device)
-    output_tensor = model(input_tensor)
-
-    print(output_tensor.shape)

@@ -27,7 +27,7 @@ class TokenEmbedding(nn.Embedding):
 
         # Add the positional embeddings to the token embeddings
         tok_emb = tok_emb + self.pos_embedding[:, :x.size(1), :]
-
+        print("tok_emb is:", tok_emb.shape)
         return tok_emb
 
 
