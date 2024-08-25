@@ -29,3 +29,13 @@ weight_decay = 5e-4
 inf = float('inf')
 
 # input shape -> (batch_size, channels, frames, height, width)
+
+# file path setting
+h2s_train_dir = 'data/train'
+h2s_train_csv = 'data/train.csv'
+
+h2s_val_dir = 'data/val'
+h2s_val_csv = 'data/val.csv'
+
+h2s_test_dir = 'data/test'
+h2s_test_csv = 'data/test.csv'

@@ -1,25 +1,34 @@
-"""
-@author : Hyunwoong
-@when : 2019-10-29
-@homepage : https://github.com/gusdnd852
-"""
-import spacy
+from transformers import T5Tokenizer
 
 
 class Tokenizer:
 
     def __init__(self):
-        self.spacy_de = spacy.load('de_core_news_sm')
-        self.spacy_en = spacy.load('en_core_web_sm')
+        # Initialize the T5 tokenizer
+        self.tokenizer = T5Tokenizer.from_pretrained('t5-small')
 
-    def tokenize_de(self, text):
+    def tokenize_en(self, sentences, padding="max_length", max_length=256, truncation=True, return_tensors="pt"):
         """
-        Tokenizes German text from a string into a list of strings
-        """
-        return [tok.text for tok in self.spacy_de.tokenizer(text)]
+        Tokenizes English text using the T5 tokenizer.
 
-    def tokenize_en(self, text):
+        Args:
+            sentences (list of str): List of sentences to tokenize.
+            padding (str): Padding strategy ("longest" or "max_length").
+            max_length (int): Maximum length for padding/truncation.
+            truncation (bool): Whether to truncate sentences to max_length.
+            return_tensors (str): Return type for tokenized output (e.g., "pt" for PyTorch tensors).
+
+        Returns:
+            Tokenized output with padding, truncation, and specified return type.
         """
-        Tokenizes English text from a string into a list of strings
-        """
-        return [tok.text for tok in self.spacy_en.tokenizer(text)]
+        # Tokenize the sentences using the T5 tokenizer
+        tokens = self.tokenizer(
+            sentences,
+            padding=padding,
+            max_length=max_length,
+            truncation=truncation,
+            return_tensors=return_tensors
+        )
+
+        return tokens.input_ids, tokens.attention_mask
+

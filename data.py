@@ -1,11 +1,8 @@
-"""
-@author : Hyunwoong
-@when : 2019-10-29
-@homepage : https://github.com/gusdnd852
-"""
 from conf import *
-from util.data_loader import DataLoader
+# from util.data_loader import DataLoader
 from util.tokenizer import Tokenizer
+from src.dataset import How2signDataset
+from torch.utils.data import Dataset, DataLoader
 
 tokenizer = Tokenizer()
 loader = DataLoader(ext=('.en', '.de'),
@@ -14,11 +11,13 @@ loader = DataLoader(ext=('.en', '.de'),
                     init_token='<sos>',
                     eos_token='<eos>')
 
-train, valid, test = loader.make_dataset()
-loader.build_vocab(train_data=train, min_freq=2)
-train_iter, valid_iter, test_iter = loader.make_iter(train, valid, test,
-                                                     batch_size=batch_size,
-                                                     device=device)
+train_dataset = How2signDataset(root_dir=h2s_train_dir, json_file=h2s_train_csv)
+val_dataset = How2signDataset(root_dir=h2s_val_dir, json_file=h2s_train_csv)
+test_dataset = How2signDataset(root_dir=h2s_test_dir, json_file=h2s_train_csv)
+
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 src_pad_idx = loader.source.vocab.stoi['<pad>']
 trg_pad_idx = loader.target.vocab.stoi['<pad>']

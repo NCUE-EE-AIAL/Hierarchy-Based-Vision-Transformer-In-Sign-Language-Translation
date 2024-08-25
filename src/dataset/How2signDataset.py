@@ -1,17 +1,23 @@
 import json
 import os.path
-
+from glob import glob
 import numpy as np #importing necessary libraries
 import pandas as pd
+import torch
+from torch.utils.data import Dataset, DataLoader
 
 class How2signDataset:
-    def __init__(self, json_files, csv_file, seq_len=183, time_len=512):
+    def __init__(self, json_dir, csv_file, seq_len=183, time_len=512):
         self.seq_len = seq_len
         self.time_len = time_len
-        self.json_files = json_files
+        self.json_files = self.find_files(json_dir)
         self.csv_file = csv_file
 
         self.sentence_dict = self.load_y()
+
+    def find_files(self, directory, pattern='**/*.json'):
+        """Recursively finds all files matching the pattern and returns every other file."""
+        return glob(os.path.join(directory, pattern), recursive=True)
 
     def get_x(self, x_path):
         # Load the JSON data
@@ -45,7 +51,7 @@ class How2signDataset:
 
         return y
 
-    def how2sign_keypoints_sentence(self):
+    def __getitem__(self):
         # Load the data from multiple files
         x = [self.get_x(json_file) for json_file in self.json_files]
         x = np.concatenate(x, axis=0)

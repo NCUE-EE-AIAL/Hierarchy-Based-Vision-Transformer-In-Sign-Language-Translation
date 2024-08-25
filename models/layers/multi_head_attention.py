@@ -47,10 +47,10 @@ class MultiHeadAttention(nn.Module):
         attn = (q @ k.transpose(-2, -1))
 
         if mask is not None:
-            mask = mask.unsqueeze(1).unsqueeze(2)
             print("q shape: ", q.shape)
             print("mask after unsqueeze: ", mask.shape)
             attn = attn.masked_fill(mask == 0, -10000)
+            print("attn shape after mask: ", attn.shape)
 
         attn = self.softmax(attn)
         attn = self.attn_drop(attn)
