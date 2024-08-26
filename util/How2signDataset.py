@@ -6,12 +6,14 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-class How2signDataset:
-    def __init__(self, json_dir, csv_file, seq_len=183, time_len=512):
+class How2signDataset(Dataset):
+    def __init__(self, files_dir, tokenizer, batch_size, seq_len=183, time_len=512):
         self.seq_len = seq_len
         self.time_len = time_len
-        self.json_files = self.find_files(json_dir)
-        self.csv_file = csv_file
+        self.json_files = self.find_files(files_dir, pattern='**/*.json')
+        self.csv_file = self.find_files(files_dir, pattern='**/*.csv')[0] # should be only one csv file
+        self.tokenizer = tokenizer
+        self.batch_size = batch_size
 
         self.sentence_dict = self.load_y()
 
@@ -28,14 +30,17 @@ class How2signDataset:
         hand_pose_faces = [person['hand_pose_face'] for person in data['people']]
 
         hand_pose_faces = np.array(hand_pose_faces)
-        hand_pose_faces = hand_pose_faces.reshape(1, -1, self.seq_len)
+        hand_pose_faces = hand_pose_faces.reshape(1, 1, -1, 1, self.seq_len)
 
         # Create an array to store the padded data
-        x = np.zeros((1, self.time_len, self.seq_len))
+        x = np.zeros((1, 1, self.time_len, 1, self.seq_len))
 
         # Fill the padded array with the actual data
-        seq_length = len(hand_pose_faces[0])
-        x[:, :seq_length, :] = hand_pose_faces[:, :seq_length, :]
+        time_length = len(hand_pose_faces[0])
+        x[:, :, time_length, :, :] = hand_pose_faces[:, :, :time_length, :, :]
+
+        # Convert to tensor
+        x = torch.tensor(x, dtype=torch.float32)
 
         return x
 
@@ -47,19 +52,18 @@ class How2signDataset:
         return sentence_dict
 
     def get_y(self, x_base_path):
-        y = self.sentence_dict.get(x_base_path, "0")
+        sentence = self.sentence_dict.get(x_base_path, "0")
+        y, _ = self.tokenizer.tokenize_en(sentence)
 
         return y
 
-    def __getitem__(self):
-        # Load the data from multiple files
-        x = [self.get_x(json_file) for json_file in self.json_files]
-        x = np.concatenate(x, axis=0)
+    def __len__(self):
+        return len(self.json_files)
 
-        json_files_base = [json_file.split(".")[0] for json_file in self.json_files]
-        print(json_files_base)
-        y = [self.get_y(json_file_base) for json_file_base in json_files_base]
-        y = np.array(y)
+    def __getitem__(self, idx):
+        json_file = self.json_files[idx]
+        x = self.get_x(json_file)
+        y = self.get_y(json_file.split(".")[0])
 
-        # Concatenate the data from the files
         return x, y
+

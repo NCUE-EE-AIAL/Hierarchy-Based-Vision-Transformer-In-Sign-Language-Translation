@@ -1,27 +1,20 @@
 from conf import *
 # from util.data_loader import DataLoader
 from util.tokenizer import Tokenizer
-from src.dataset import How2signDataset
+from util.How2signDataset import How2signDataset
 from torch.utils.data import Dataset, DataLoader
+import torch.multiprocessing as mp
 
+mp.set_start_method('spawn')
 tokenizer = Tokenizer()
-loader = DataLoader(ext=('.en', '.de'),
-                    tokenize_en=tokenizer.tokenize_en,
-                    tokenize_de=tokenizer.tokenize_de,
-                    init_token='<sos>',
-                    eos_token='<eos>')
 
-train_dataset = How2signDataset(root_dir=h2s_train_dir, json_file=h2s_train_csv)
-val_dataset = How2signDataset(root_dir=h2s_val_dir, json_file=h2s_train_csv)
-test_dataset = How2signDataset(root_dir=h2s_test_dir, json_file=h2s_train_csv)
+train_dataset = How2signDataset(files_dir=h2s_train_dir, tokenizer=tokenizer)
+val_dataset = How2signDataset(files_dir=h2s_val_dir, tokenizer=tokenizer, batch_size=batch_size)
+test_dataset = How2signDataset(files_dir=h2s_test_dir, tokenizer=tokenizer)
 
-train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
+test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=1)
 
-src_pad_idx = loader.source.vocab.stoi['<pad>']
-trg_pad_idx = loader.target.vocab.stoi['<pad>']
-trg_sos_idx = loader.target.vocab.stoi['<sos>']
-
-enc_voc_size = len(loader.source.vocab)
-dec_voc_size = len(loader.target.vocab)
+pad_token_id = 0
+eos_token_id = 1
