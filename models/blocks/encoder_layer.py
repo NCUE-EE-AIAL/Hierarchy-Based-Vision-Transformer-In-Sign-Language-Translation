@@ -2,8 +2,8 @@ from torch import nn
 
 from models.layers.layer_norm import LayerNorm
 from models.layers.multi_head_attention import MultiHeadAttention
-from models.layers.Mlp import Mlp
-from models.utils import window_partition, window_reverse
+from models.layers.mlp import Mlp
+from models.layers.window_partition import window_partition, window_reverse
 
 
 class EncoderLayer(nn.Module):

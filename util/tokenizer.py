@@ -2,10 +2,9 @@ from transformers import T5Tokenizer
 
 
 class Tokenizer:
-
     def __init__(self):
         # Initialize the T5 tokenizer
-        self.tokenizer = T5Tokenizer.from_pretrained('t5-small')
+        self.tokenizer = T5Tokenizer.from_pretrained('t5-small', legacy=False)
 
     def tokenize_en(self, sentences, padding="max_length", max_length=256, truncation=True, return_tensors="pt"):
         """
@@ -31,4 +30,6 @@ class Tokenizer:
         )
 
         return tokens.input_ids, tokens.attention_mask
+
+
 

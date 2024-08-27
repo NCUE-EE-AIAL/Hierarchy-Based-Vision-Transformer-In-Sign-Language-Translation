@@ -7,15 +7,12 @@ import torch
 
 # GPU device setting
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-torch.set_default_device(device)
-
-# Initialize random input tensor with shape (batch_size, channels, frames, height, width)
-input_tensor = torch.rand(3, 1, 512, 1, 183)
 
 # model parameter setting
 batch_size = 128
-image_size = (1, 183)
-image_patch_size = (1, 183)
+seq_len = 183
+image_size = (1, seq_len)
+image_patch_size = (1, seq_len)
 max_frames = 512
 frame_patch_size = 1
 dim = 128
@@ -41,5 +38,7 @@ inf = float('inf')
 
 # file path setting
 h2s_train_dir = 'dataset/how2sign/train_2D_Keypoints'
-h2s_val_dir = 'dataset/how2sign/val_2D_Keypoints'
+# h2s_val_dir = 'dataset/how2sign/val_2D_Keypoints'
+h2s_val_dir = 'dataset/how2sign/for_test'
 h2s_test_dir = 'dataset/how2sign/test_2D_Keypoints'
+

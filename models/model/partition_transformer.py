@@ -5,7 +5,7 @@ from models.model.encoder import Encoder
 from models.model.decoder import Decoder
 
 class PartitionTransformer(nn.Module):
-    def __init__(self, trg_pad_idx, image_size, image_patch_size, max_frames, frame_patch_size, dim, max_len, device):
+    def __init__(self, trg_pad_idx, image_size, image_patch_size, max_frames, frame_patch_size, dim, ffn_hidden, n_head, drop_prob, max_len, dec_voc_size, device):
         super().__init__()
         self.device = device
         self.trg_pad_idx = trg_pad_idx
@@ -32,7 +32,7 @@ class PartitionTransformer(nn.Module):
         return output
 
     def make_trg_mask(self, trg):
-        trg_pad_mask = (trg != self.trg_pad_idx).unsqueeze(1).unsqueeze(3)
+        trg_pad_mask = (trg != self.trg_pad_idx).unsqueeze(1).unsqueeze(3).to(self.device)
         trg_len = trg.shape[1]
         trg_sub_mask = torch.tril(torch.ones(trg_len, trg_len)).type(torch.ByteTensor).to(self.device)
         trg_mask = trg_pad_mask & trg_sub_mask
@@ -71,6 +71,7 @@ if __name__ == '__main__':
         truncation=True,  # Truncate if the sentence exceeds max_length
         return_tensors="pt"  # Return PyTorch tensors
     )
+    print(encoding.input_ids.shape)
 
     model = PartitionTransformer(trg_pad_idx=tokenizer.pad_token_id,
                                  image_size=image_size,
@@ -78,8 +79,12 @@ if __name__ == '__main__':
                                  max_frames=max_frames,
                                  frame_patch_size=frame_patch_size,
                                  dim=dim,
+                                 ffn_hidden=ffn_hidden,
+                                 n_head=n_head,
+                                 drop_prob=drop_prob,
+                                 dec_voc_size=dec_voc_size,
                                  max_len=max_len,
                                  device=device)
 
-    output_tensor = model(input_tensor, encoding.attention_mask)
+    output_tensor = model(input_tensor, encoding.input_ids)
     print(output_tensor.shape)

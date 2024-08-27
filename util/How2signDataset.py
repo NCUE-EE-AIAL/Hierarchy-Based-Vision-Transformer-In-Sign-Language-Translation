@@ -30,18 +30,17 @@ class How2signDataset(Dataset):
         hand_pose_faces = [person['hand_pose_face'] for person in data['people']]
 
         hand_pose_faces = np.array(hand_pose_faces)
-        hand_pose_faces = hand_pose_faces.reshape(1, 1, -1, 1, self.seq_len)
+        hand_pose_faces = hand_pose_faces.reshape(1, -1, 1, self.seq_len)
 
         # Create an array to store the padded data
-        x = np.zeros((1, 1, self.time_len, 1, self.seq_len))
+        x = np.zeros((1, self.time_len, 1, self.seq_len))
 
         # Fill the padded array with the actual data
         time_length = len(hand_pose_faces[0])
-        x[:, :, time_length, :, :] = hand_pose_faces[:, :, :time_length, :, :]
+        x[:, :time_length, :, :] = hand_pose_faces[:, :time_length, :, :]
 
         # Convert to tensor
         x = torch.tensor(x, dtype=torch.float32)
-
         return x
 
     def load_y(self):
@@ -52,8 +51,9 @@ class How2signDataset(Dataset):
         return sentence_dict
 
     def get_y(self, x_base_path):
-        sentence = self.sentence_dict.get(x_base_path, "0")
+        sentence = self.sentence_dict.get(x_base_path, 0)
         y, _ = self.tokenizer.tokenize_en(sentence)
+        y = y.squeeze(0)
 
         return y
 
@@ -63,7 +63,9 @@ class How2signDataset(Dataset):
     def __getitem__(self, idx):
         json_file = self.json_files[idx]
         x = self.get_x(json_file)
-        y = self.get_y(json_file.split(".")[0])
+
+        json_base = os.path.splitext(os.path.basename(json_file))[0]
+        y = self.get_y(json_base)
 
         return x, y
 

@@ -2,8 +2,7 @@ from torch import nn
 
 from models.layers.layer_norm import LayerNorm
 from models.layers.multi_head_attention import MultiHeadAttention
-from models.layers.Mlp import Mlp
-from models.utils import window_partition, window_reverse
+from models.layers.mlp import Mlp
 
 
 class DecoderLayer(nn.Module):
