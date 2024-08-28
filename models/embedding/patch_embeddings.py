@@ -18,9 +18,8 @@ class PatchEmbedding(nn.Module):
             frame_patch_size (int): number of patches in a frame
             dim (int): embedding dimension
             channels (int): number of channels in the image
-
-        Returns:
-            nn.Embedding: embedding layer shaped as (batch, num_patches, dim)
+            drop_prob (float): dropout probability
+            device (torch.device or str): device to run the model on ('cpu' or 'cuda')
         """
         super().__init__()
         self.device = device
@@ -30,22 +29,21 @@ class PatchEmbedding(nn.Module):
         assert image_height % patch_height == 0 and image_width % patch_width == 0, 'Image dimensions must be divisible by the patch size.'
         assert max_frames % frame_patch_size == 0, 'Frames must be divisible by frame patch size'
 
-        # num_patches = (image_height // patch_height) * (image_width // patch_width) * (frames // frame_patch_size)
         patch_dim = channels * patch_height * patch_width * frame_patch_size
 
         self.to_patch_embedding = nn.Sequential(
             Rearrange('b c (f pf) (h p1) (w p2) -> b (f h w) (p1 p2 pf c)', p1=patch_height, p2=patch_width, pf=frame_patch_size),
-            nn.LayerNorm(patch_dim),
-            nn.Linear(patch_dim, dim),
-            nn.LayerNorm(dim),
+            nn.LayerNorm(patch_dim).to(device),
+            nn.Linear(patch_dim, dim).to(device),
+            nn.LayerNorm(dim).to(device),
         )
 
-        self.pos_embedding = nn.Parameter(torch.randn(1, max_frames, dim, device=device))
+        self.pos_embedding = nn.Parameter(torch.randn(1, max_frames, dim).to(device))
 
         self.drop_out = nn.Dropout(p=drop_prob)
 
     def forward(self, x):
         x = x.to(self.device)
         patch_emb = self.to_patch_embedding(x)
-        pos_emb = self.pos_embedding[:, :patch_emb.size(1), :]
+        pos_emb = self.pos_embedding[:, :patch_emb.size(1), :].to(self.device)
         return self.drop_out(patch_emb + pos_emb)

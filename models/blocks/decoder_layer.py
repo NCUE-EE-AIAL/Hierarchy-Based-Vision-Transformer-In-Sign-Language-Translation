@@ -7,16 +7,16 @@ from models.layers.mlp import Mlp
 
 class DecoderLayer(nn.Module):
 
-    def __init__(self, dim, ffn_hidden, n_head, drop_prob):
+    def __init__(self, dim, ffn_hidden, n_head, drop_prob, device):
         super().__init__()
-        self.self_attention = MultiHeadAttention(dim=dim, num_heads=n_head, drop_prob=drop_prob)
-        self.norm1 = LayerNorm(dim=dim)
+        self.self_attention = MultiHeadAttention(dim=dim, num_heads=n_head, drop_prob=drop_prob, device=device)
+        self.norm1 = LayerNorm(dim=dim, device=device)
 
-        self.enc_dec_attention = MultiHeadAttention(dim=dim, num_heads=n_head, drop_prob=drop_prob)
-        self.norm2 = LayerNorm(dim=dim)
+        self.enc_dec_attention = MultiHeadAttention(dim=dim, num_heads=n_head, drop_prob=drop_prob, device=device)
+        self.norm2 = LayerNorm(dim=dim, device=device)
 
-        self.mlp = Mlp(in_features=dim, hidden_features=ffn_hidden, drop=drop_prob)
-        self.norm3 = LayerNorm(dim=dim)
+        self.mlp = Mlp(in_features=dim, hidden_features=ffn_hidden, drop=drop_prob, device=device)
+        self.norm3 = LayerNorm(dim=dim, device=device)
 
     def forward(self, dec, enc, trg_mask):
         # 1. compute self attention

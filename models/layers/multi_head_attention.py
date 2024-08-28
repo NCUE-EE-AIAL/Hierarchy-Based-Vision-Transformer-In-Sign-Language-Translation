@@ -1,43 +1,51 @@
 from torch import nn
 
-
 class MultiHeadAttention(nn.Module):
     r""" Window based multi-head self attention
 
     Args:
         dim (int): Number of input channels.
-        window_size (tuple[int]): The height and width of the window.
         num_heads (int): Number of attention heads.
-        qkv_bias (bool, optional):  If True, add a learnable bias to query, key, value. Default: True
+        drop_prob (float): Dropout ratio of attention weight. Default: 0.0
+        qkv_bias (bool, optional): If True, add a learnable bias to query, key, value. Default: True
         qk_scale (float | None, optional): Override default qk scale of head_dim ** -0.5 if set
-        attn_drop (float, optional): Dropout ratio of attention weight. Default: 0.0
-        proj_drop (float, optional): Dropout ratio of output. Default: 0.0
+        device (torch.device, optional): Device to which the tensors should be moved. Default: None
     """
 
-    def __init__(self, dim, num_heads, drop_prob, qkv_bias=True, qk_scale=None):
+    def __init__(self, dim, num_heads, drop_prob, qkv_bias=True, qk_scale=None, device=None):
         super().__init__()
         self.dim = dim
         self.num_heads = num_heads
+        self.device = device  # Store device
         head_dim = dim // num_heads
         self.scale = qk_scale or head_dim ** -0.5
 
-        self.w_q = nn.Linear(dim, dim, bias=qkv_bias)
-        self.w_k = nn.Linear(dim, dim, bias=qkv_bias)
-        self.w_v = nn.Linear(dim, dim, bias=qkv_bias)
+        # Define layers and move them to the specified device
+        self.w_q = nn.Linear(dim, dim, bias=qkv_bias).to(device)
+        self.w_k = nn.Linear(dim, dim, bias=qkv_bias).to(device)
+        self.w_v = nn.Linear(dim, dim, bias=qkv_bias).to(device)
 
-        self.attn_drop = nn.Dropout(drop_prob)
-        self.proj = nn.Linear(dim, dim)
-        self.proj_drop = nn.Dropout(drop_prob)
+        self.attn_drop = nn.Dropout(drop_prob).to(device)
+        self.proj = nn.Linear(dim, dim).to(device)
+        self.proj_drop = nn.Dropout(drop_prob).to(device)
 
-        self.softmax = nn.Softmax(dim=-1)
+        self.softmax = nn.Softmax(dim=-1).to(device)
 
-    def forward(self, q, k ,v, mask=None):
+    def forward(self, q, k, v, mask=None):
         """
         Args:
             q, k, v: input features with shape of (num_windows*B, N, C)
+            mask: optional attention mask of shape (num_windows*B, num_heads, N_q, N_k)
         """
         B_, N_q, C = q.shape
         _, N_k, _ = k.shape
+
+        # Ensure the inputs are on the right device
+        q = q.to(self.device)
+        k = k.to(self.device)
+        v = v.to(self.device)
+        if mask is not None:
+            mask = mask.to(self.device)
 
         q = self.w_q(q).reshape(B_, N_q, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
         k = self.w_k(k).reshape(B_, N_k, self.num_heads, C // self.num_heads).permute(0, 2, 1, 3)
@@ -47,10 +55,7 @@ class MultiHeadAttention(nn.Module):
         attn = (q @ k.transpose(-2, -1))
 
         if mask is not None:
-            print("q shape: ", q.shape)
-            print("mask after unsqueeze: ", mask.shape)
             attn = attn.masked_fill(mask == 0, -10000)
-            print("attn shape after mask: ", attn.shape)
 
         attn = self.softmax(attn)
         attn = self.attn_drop(attn)
@@ -61,7 +66,7 @@ class MultiHeadAttention(nn.Module):
         return x
 
     def extra_repr(self) -> str:
-        return f'dim={self.dim}, num_heads={self.num_heads}'
+        return f'dim={self.dim}, num_heads={self.num_heads}, device={self.device}'
 
     def flops(self, N):
         # calculate flops for 1 window with token length of N
@@ -71,7 +76,7 @@ class MultiHeadAttention(nn.Module):
         # attn = (q @ k.transpose(-2, -1))
         flops += self.num_heads * N * (self.dim // self.num_heads) * N
         #  x = (attn @ v)
-        flops += self.num_heads * N * N * (self.dim // self.num_heads)
+        flops += self.num_heads * N * N * (this.dim // self.num_heads)
         # x = self.proj(x)
         flops += N * self.dim * self.dim
         return flops
