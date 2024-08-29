@@ -24,7 +24,8 @@ class PartitionTransformer(nn.Module):
                                dim=dim,
                                ffn_hidden=ffn_hidden,
                                n_head=n_head,
-                               drop_prob=drop_prob)
+                               drop_prob=drop_prob,
+                               device=device)
     def forward(self, src, trg):
         trg_mask = self.make_trg_mask(trg)
         enc_src = self.encoder(src)
