@@ -64,7 +64,7 @@ if __name__ == '__main__':
     # Initialize the tokenizer
     tokenizer = T5Tokenizer.from_pretrained('t5-small')
 
-    sentence = ["So what I usually do is I don't necessarily stand in the traditional sense to start as far as a boxer's stance"]
+    sentence = ["beautiful FiberWirordnung repay sistemului lots complementaccueillir Saturdayutz noisy Finland designedutiliserenregistrementmanagement420 designers Concentrcooked USDA promoted silhouette hier Subaru credit proven complement freezerBestimmungen incalzire recognition Aussicht leaves Saturday messaging fördern Violence revenu Threatuncinewest 60 Highway persoaneThere pă eradicate Taiwan valoareStu snakeän button evolving vulnerability tailored erwachsene Eigenschaften remboursement Lucky insgesamt Cont Martha Letter Letter thought URL dealers Lettertrans Letter defensive Letter Letter Samuel Letter păcate CBD resin möchte Magi Letterbacter Aussicht Letter excepți clutchArch Studio Letter müssen Letterecuring URL Letter Bestandteil URL Letter Lucky möchte Letter Letter blogging Letter Letter Letter Letter meanscommun harass LetterOTO Letter Letter Lettercommun Letter Letter Letterprogressively Letter Letteradvising möchte recolt Letter Letter Letter Letter Letter replies chacun Branchserrurerie Letter Lettercommun Letterpos Letter Letter Letter recolt limousinecommun Letter Letter stolen Letter Letter 1:1 Letter experience Letter Letter alten clutch Letter Bewerber Letternom Letter recolt Letter Letter parasit Letter Letter Letter Letter Letterprogressively limousine chacun processus Letter Letter sub Letter Sanchez political Letter Letter picior Letter delight Letter Letterposbauen Letter vorba Letter Lettertransnom 1:1 Transaction Letternom Letter URL Letter Letter Letternom Letterpos Letter Adelaide Letter Letter vacation Letter Letter vorba Nach recolt performing Letterickinespos inaccurate URLOTO Letter Letter Letter Zauber Letter Flip Letterн Letter Letter LetterThey Spray Letterbauen Letter Letter Letterbut Motor Letter păpat Letter Letter Letter Samuel Letter"]
     tokens = tokenizer(
         sentence,
         padding=True,
@@ -72,15 +72,17 @@ if __name__ == '__main__':
         return_tensors="pt"
     )
     # Example token IDs, including special tokens
-    token_ids = tokens.input_ids  # Assuming 0 is <pad>, 329 is a word, 10 is another word, 2 is <eos>
-    token_ids = torch.tensor(token_ids)
-    tokens = tokenizer.convert_ids_to_tokens(token_ids[0])
+    token_ids = torch.randint(0, 2, (1, 32, 32))
+    print(token_ids[0])
+    token_ids = token_ids[0].max(dim=1)[1]
+    print(token_ids)
+    tokens = tokenizer.convert_ids_to_tokens(token_ids)
     print(token_ids[0].shape)
 
     # Decode with special tokens
-    sentence_with_special = tokenizer.decode(token_ids[0], skip_special_tokens=False)
+    sentence_with_special = tokenizer.decode(token_ids, skip_special_tokens=False)
     print(sentence_with_special)  # Might print: '<pad> This is a test. <eos>'
 
     # Decode without special tokens
-    sentence_without_special = tokenizer.decode(token_ids[0], skip_special_tokens=True)
+    sentence_without_special = tokenizer.decode(token_ids, skip_special_tokens=True)
     print(sentence_without_special)  # Might print: 'This is a test.'

@@ -38,7 +38,7 @@ class Encoder(nn.Module):
                                                    n_head=n_head,
                                                    drop_prob=drop_prob,
                                                    device=device)
-                                      for _ in range(6)])
+                                      for _ in range(2)])
 
         self.layers4 = nn.ModuleList([EncoderLayer(dim=dim,
                                                    ffn_hidden=ffn_hidden,
@@ -50,11 +50,11 @@ class Encoder(nn.Module):
         x = self.emb(x)
 
         for layer in self.layers1:
-            x = layer(x, window_size=64)
+            x = layer(x, window_size=512)
         for layer in self.layers2:
-            x = layer(x, window_size=128)
+            x = layer(x, window_size=512)
         for layer in self.layers3:
-            x = layer(x, window_size=256)
+            x = layer(x, window_size=512)
         for layer in self.layers4:
             x = layer(x, window_size=512)
 

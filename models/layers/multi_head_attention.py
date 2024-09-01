@@ -64,19 +64,3 @@ class MultiHeadAttention(nn.Module):
         x = self.proj(x)
         x = self.proj_drop(x)
         return x
-
-    def extra_repr(self) -> str:
-        return f'dim={self.dim}, num_heads={self.num_heads}, device={self.device}'
-
-    def flops(self, N):
-        # calculate flops for 1 window with token length of N
-        flops = 0
-        # qkv = self.qkv(x)
-        flops += N * self.dim * 3 * self.dim
-        # attn = (q @ k.transpose(-2, -1))
-        flops += self.num_heads * N * (self.dim // self.num_heads) * N
-        #  x = (attn @ v)
-        flops += self.num_heads * N * N * (this.dim // self.num_heads)
-        # x = self.proj(x)
-        flops += N * self.dim * self.dim
-        return flops

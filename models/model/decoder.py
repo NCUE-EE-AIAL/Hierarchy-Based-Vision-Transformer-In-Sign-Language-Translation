@@ -19,7 +19,7 @@ class Decoder(nn.Module):
                                                   n_head=n_head,
                                                   drop_prob=drop_prob,
                                                   device=device)
-                                     for _ in range(8)])
+                                     for _ in range(6)])
 
         self.linear = nn.Linear(dim, dec_voc_size).to(device)
 

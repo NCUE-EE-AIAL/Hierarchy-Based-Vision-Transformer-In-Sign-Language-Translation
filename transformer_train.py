@@ -105,7 +105,8 @@ def train(model, iterator, optimizer, criterion, clip):
         scaler.update()
 
         epoch_loss += loss.item()
-        print('step :', round((i / len(iterator)) * 100, 2), '% , loss :', loss.item())
+        if i % 10 == 0:  # Adjust the frequency as needed
+            print(f'step: {round((i / len(iterator)) * 100, 2)}% , loss: {loss.item()}')
 
     return epoch_loss / len(iterator)
 
