@@ -1,8 +1,12 @@
+from collections import Counter
+from torchtext.vocab import vocab
+
 from conf import *
 # from util.data_loader import DataLoader
 from util.tokenizer import Tokenizer
 from util.How2signDataset import How2signDataset
 from torch.utils.data import DataLoader
+import os
 
 tokenizer = Tokenizer()
 
@@ -14,6 +18,20 @@ train_iter = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_
 # train_iter = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 valid_iter = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0, pin_memory=True)
 test_iter = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=0, pin_memory=True)
+
+if not os.path.exists('vocab.pth'):
+	data = train_dataset.load_y().values()
+	counter = Counter()
+	for line in data:
+		counter.update(tokenizer.tokenize_en(line))
+
+	# Build the vocabulary
+	vocabulary = vocab(counter, min_freq=10, specials=['<unk>', '<pad>', '<sos>', '<eos>'])
+	torch.save(vocabulary, 'vocab.pth')
+	print("Vocabulary size:", len(vocabulary))
+else:
+	vocabulary = torch.load('vocab.pth')
+	print("Vocabulary size:", len(vocabulary))
 
 pad_token_id = 0
 eos_token_id = 1
