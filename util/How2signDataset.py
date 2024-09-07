@@ -7,13 +7,13 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 
 class How2signDataset(Dataset):
-    def __init__(self, files_dir, tokenizer, batch_size, seq_len=183, time_len=512):
+    def __init__(self, files_dir, tokenizer, vocabulary=None, seq_len=183, time_len=512):
         self.seq_len = seq_len
         self.time_len = time_len
         self.json_files = self.find_files(files_dir, pattern='**/*.json')
         self.csv_file = self.find_files(files_dir, pattern='**/*.csv')[0] # should be only one csv file
         self.tokenizer = tokenizer
-        self.batch_size = batch_size
+        self.vocab = vocabulary
 
         self.sentence_dict = self.load_y()
 
@@ -51,9 +51,10 @@ class How2signDataset(Dataset):
         return sentence_dict
 
     def get_y(self, x_base_path):
-        sentence = self.sentence_dict.get(x_base_path, 0)
-        y, _ = self.tokenizer.tokenize_en(sentence)
-        y = y.squeeze(0)
+        sentence = self.sentence_dict.get(x_base_path, '<pad>')
+        sentence = self.tokenizer.tokenize_en(sentence)
+        y = [self.vocab[token] if token in self.vocab else self.vocab['<pad>'] for token in sentence]
+        y = torch.tensor(y, dtype=torch.long)
 
         return y
 

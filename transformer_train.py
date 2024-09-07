@@ -88,9 +88,9 @@ def train(model, iterator, optimizer, criterion, clip):
 
         # FP32 -> FP16
         with autocast():
-            output = model(src, trg)
+            output = model(src, trg[:, :-1])
             output_reshape = output.contiguous().view(-1, output.shape[-1])
-            trg = trg.contiguous().view(-1)
+            trg = trg[:, 1:].contiguous().view(-1)
 
             loss = criterion(output_reshape, trg)
 
@@ -120,9 +120,9 @@ def evaluate(model, iterator, criterion):
             src = x.to(device)
             trg = y.to(device)
 
-            output = model(src, trg)
+            output = model(src, trg[:, :-1])
             output_reshape = output.contiguous().view(-1, output.shape[-1])
-            trg = trg.contiguous().view(-1)
+            trg = trg[:, 1:].contiguous().view(-1)
 
             loss = criterion(output_reshape, trg)
             epoch_loss += loss.item()
@@ -130,11 +130,11 @@ def evaluate(model, iterator, criterion):
             total_bleu = []
             for j in range(batch_size):
                 try:
-                    trg_words = idx_to_word(y[j], tokenizer.tokenizer)
+                    trg_words = idx_to_word(y[j], vocabulary)
                     output_words = output[j].max(dim=1)[1]
-                    output_words = idx_to_word(output_words, tokenizer.tokenizer)
-                    print("trg_words : ", trg_words)
-                    print("output_words : ", output_words)
+                    output_words = idx_to_word(output_words, vocabulary)
+                    # print("trg_words : ", trg_words)
+                    # print("output_words : ", output_words)
                     bleu = get_bleu(hypotheses=output_words.split(), reference=trg_words.split())
 
                     total_bleu.append(bleu)

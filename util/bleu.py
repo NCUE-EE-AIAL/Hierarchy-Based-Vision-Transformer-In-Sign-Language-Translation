@@ -41,19 +41,10 @@ def get_bleu(hypotheses, reference):
     return 100 * bleu(stats)
 
 
-def idx_to_word(x, tokenizer):
-    """
-    Converts a sequence of token IDs into a string using the T5 tokenizer.
-
-    Args:
-    x (list of int): A list of token indices.
-    tokenizer (T5Tokenizer): The T5 tokenizer.
-
-    Returns:
-    str: The decoded sentence as a string.
-    """
-    # Convert the list of token IDs into a string
-    sentence = tokenizer.decode(x, skip_special_tokens=True)
+def idx_to_word(x, vocab):
+    sentence = [vocab.lookup_token(i) for i in x]
+    sentence = ''.join(sentence)
+    sentence = sentence.replace('▁', ' ').replace('<pad>', '')
 
     return sentence
 
@@ -64,7 +55,7 @@ if __name__ == '__main__':
     # Initialize the tokenizer
     tokenizer = T5Tokenizer.from_pretrained('t5-small')
 
-    sentence = ["beautiful FiberWirordnung repay sistemului lots complementaccueillir Saturdayutz noisy Finland designedutiliserenregistrementmanagement420 designers Concentrcooked USDA promoted silhouette hier Subaru credit proven complement freezerBestimmungen incalzire recognition Aussicht leaves Saturday messaging fördern Violence revenu Threatuncinewest 60 Highway persoaneThere pă eradicate Taiwan valoareStu snakeän button evolving vulnerability tailored erwachsene Eigenschaften remboursement Lucky insgesamt Cont Martha Letter Letter thought URL dealers Lettertrans Letter defensive Letter Letter Samuel Letter păcate CBD resin möchte Magi Letterbacter Aussicht Letter excepți clutchArch Studio Letter müssen Letterecuring URL Letter Bestandteil URL Letter Lucky möchte Letter Letter blogging Letter Letter Letter Letter meanscommun harass LetterOTO Letter Letter Lettercommun Letter Letter Letterprogressively Letter Letteradvising möchte recolt Letter Letter Letter Letter Letter replies chacun Branchserrurerie Letter Lettercommun Letterpos Letter Letter Letter recolt limousinecommun Letter Letter stolen Letter Letter 1:1 Letter experience Letter Letter alten clutch Letter Bewerber Letternom Letter recolt Letter Letter parasit Letter Letter Letter Letter Letterprogressively limousine chacun processus Letter Letter sub Letter Sanchez political Letter Letter picior Letter delight Letter Letterposbauen Letter vorba Letter Lettertransnom 1:1 Transaction Letternom Letter URL Letter Letter Letternom Letterpos Letter Adelaide Letter Letter vacation Letter Letter vorba Nach recolt performing Letterickinespos inaccurate URLOTO Letter Letter Letter Zauber Letter Flip Letterн Letter Letter LetterThey Spray Letterbauen Letter Letter Letterbut Motor Letter păpat Letter Letter Letter Samuel Letter"]
+    sentence = "This is a test."
     tokens = tokenizer(
         sentence,
         padding=True,

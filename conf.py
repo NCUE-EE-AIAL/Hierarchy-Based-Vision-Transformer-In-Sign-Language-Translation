@@ -17,7 +17,6 @@ n_heads = 8
 ffn_hidden = 2048
 drop_prob = 0.1
 max_len = 256
-dec_voc_size = 32128
 
 # optimizer parameter setting
 init_lr = 0.1
@@ -34,8 +33,8 @@ inf = float('inf')
 # file path setting
 # h2s_train_dir = 'dataset/how2sign/train_2D_Keypoints'
 # h2s_val_dir = 'dataset/how2sign/val_2D_Keypoints'
-h2s_test_dir = 'dataset/how2sign/test_2D_Keypoints'
+# h2s_test_dir = 'dataset/how2sign/test_2D_Keypoints'
 
-# h2s_train_dir = 'dataset/how2sign/test_2D_Keypoints'
 h2s_train_dir = 'dataset/how2sign/for_test'
+h2s_test_dir = 'dataset/how2sign/for_test'
 h2s_val_dir = 'dataset/how2sign/for_test'
