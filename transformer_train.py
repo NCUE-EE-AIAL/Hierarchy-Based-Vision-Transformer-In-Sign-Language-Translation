@@ -17,33 +17,21 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 """
-swin transformer
 def initialize_weights(m):
     if isinstance(m, nn.Linear):
-        trunc_normal_(m.weight, std=.02)
-        if isinstance(m, nn.Linear) and m.bias is not None:
+        nn.init.kaiming_uniform_(m.weight.data)
+        if m.bias is not None:
             nn.init.constant_(m.bias, 0)
+    elif isinstance(m, nn.Embedding):
+        nn.init.uniform_(m.weight.data, -0.1, 0.1)
     elif isinstance(m, nn.LayerNorm):
         nn.init.constant_(m.bias, 0)
         nn.init.constant_(m.weight, 1.0)
-        
+"""
 def initialize_weights(m):
     if hasattr(m, 'weight') and m.weight.dim() > 1:
             nn.init.kaiming_uniform(m.weight.data)
-"""
-def initialize_weights(m):
-    if isinstance(m, nn.Linear):
-        # Xavier initialization for linear layers
-        nn.init.xavier_uniform_(m.weight.data)
-        if m.bias is not None:
-            nn.init.zeros_(m.bias.data)
-    elif isinstance(m, nn.Embedding):
-        # Normal initialization for embeddings
-        nn.init.normal_(m.weight.data, mean=0.0, std=1.0)
-    elif isinstance(m, nn.LayerNorm):
-        # Set biases to zero and weights to ones for LayerNorm
-        nn.init.ones_(m.weight.data)
-        nn.init.zeros_(m.bias.data)
+
 
 
 model = PartitionTransformer(trg_pad_idx=pad_token_id,
@@ -62,20 +50,17 @@ model = PartitionTransformer(trg_pad_idx=pad_token_id,
 
 print(f'The model has {count_parameters(model):,} trainable parameters')
 model.apply(initialize_weights)
+
 optimizer = Adam(params=model.parameters(),
                  lr=init_lr,
-                 weight_decay=weight_decay,
-                 eps=adam_eps)
+                 weight_decay=weight_decay,)
 
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer=optimizer,
-                                                 verbose=True,
-                                                 factor=factor,
-                                                 patience=patience)
+scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=34000, T_mult=1, verbose=True)
 
 criterion = nn.CrossEntropyLoss(ignore_index=pad_token_id)
 
 # create`torch.cuda.amp.GradScaler`
-scaler = GradScaler()
+scaler = GradScaler(init_scale=2.0)
 
 def train(model, iterator, optimizer, criterion, clip):
     model.train()
@@ -87,7 +72,7 @@ def train(model, iterator, optimizer, criterion, clip):
         optimizer.zero_grad()
 
         # FP32 -> FP16
-        with autocast():
+        with autocast(enabled=False):
             output = model(src, trg[:, :-1])
             output_reshape = output.contiguous().view(-1, output.shape[-1])
             trg = trg[:, 1:].contiguous().view(-1)
@@ -105,7 +90,7 @@ def train(model, iterator, optimizer, criterion, clip):
         scaler.update()
 
         epoch_loss += loss.item()
-        if i % 10 == 0:  # Adjust the frequency as needed
+        if i % 100 == 0:  # Adjust the frequency as needed
             print(f'step: {round((i / len(iterator)) * 100, 2)}% , loss: {loss.item()}')
 
     return epoch_loss / len(iterator)
@@ -145,7 +130,8 @@ def evaluate(model, iterator, criterion):
                 total_bleu = sum(total_bleu) / len(total_bleu)
                 batch_bleu.append(total_bleu)
 
-            print('step :', round((i / len(iterator)) * 100, 2), '% , loss :', loss.item())
+            if i % 50 == 0:
+                print('step :', round((i / len(iterator)) * 100, 2), '% , loss :', loss.item())
 
     batch_bleu = sum(batch_bleu) / len(batch_bleu) if batch_bleu else 0.0
     return epoch_loss / len(iterator), batch_bleu
@@ -156,7 +142,6 @@ def run(total_epoch, best_loss):
     for step in range(total_epoch):
         start_time = time.time()
         train_loss = train(model, train_iter, optimizer, criterion, clip)
-        print('train_loss :', train_loss)
         valid_loss, bleu = evaluate(model, valid_iter, criterion)
         end_time = time.time()
 

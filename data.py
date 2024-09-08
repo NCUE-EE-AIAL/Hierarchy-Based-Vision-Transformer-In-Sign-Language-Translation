@@ -35,10 +35,9 @@ def collate_fn(batch):
 
 	return inputs, padded_targets
 
-train_iter = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=4, pin_memory=True)
-# train_iter = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
-valid_iter = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn, num_workers=0, pin_memory=True)
-test_iter = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn, num_workers=0, pin_memory=True)
+train_iter = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn, num_workers=4, pin_memory=True, drop_last=True)
+valid_iter = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn, num_workers=0, pin_memory=True, drop_last=True)
+test_iter = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn, num_workers=0, pin_memory=True, drop_last=True)
 
 pad_token_id = vocabulary['<pad>']
 sos_token_id = vocabulary['<sos>']

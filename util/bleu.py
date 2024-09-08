@@ -9,6 +9,7 @@ def bleu_stats(hypothesis, reference):
     stats = []
     stats.append(len(hypothesis))
     stats.append(len(reference))
+
     for n in range(1, 5):
         s_ngrams = Counter(
             [tuple(hypothesis[i:i + n]) for i in range(len(hypothesis) + 1 - n)]
@@ -42,11 +43,16 @@ def get_bleu(hypotheses, reference):
 
 
 def idx_to_word(x, vocab):
-    sentence = [vocab.lookup_token(i) for i in x]
-    sentence = ''.join(sentence)
-    sentence = sentence.replace('▁', ' ').replace('<pad>', '')
+    words = []
+    for i in x:
+        word = vocab.lookup_token(i)  # Retrieve the word using the index
+        if '<' not in word:  # Exclude words with '<', typically special tokens like <pad>, <sos>, <eos>
+            words.append(word)  # Append valid words to the list
+    words = "".join(words)  # Join the list into a sentence with spaces between words
+    words = words.replace('▁', ' ')
 
-    return sentence
+    return words
+
 
 if __name__ == '__main__':
     from transformers import T5Tokenizer
