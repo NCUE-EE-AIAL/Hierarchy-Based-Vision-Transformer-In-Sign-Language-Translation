@@ -57,7 +57,8 @@ optimizer = Adam(params=model.parameters(),
 
 scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=34000, T_mult=1, verbose=True)
 
-criterion = nn.CrossEntropyLoss(ignore_index=pad_token_id)
+criterion = nn.CrossEntropyLoss(ignore_index=pad_token_id,
+                                label_smoothing=0.1)
 
 # create`torch.cuda.amp.GradScaler`
 scaler = GradScaler(init_scale=2.0)
@@ -72,22 +73,24 @@ def train(model, iterator, optimizer, criterion, clip):
         optimizer.zero_grad()
 
         # FP32 -> FP16
-        with autocast(enabled=False):
-            output = model(src, trg[:, :-1])
-            output_reshape = output.contiguous().view(-1, output.shape[-1])
-            trg = trg[:, 1:].contiguous().view(-1)
+        # with autocast(enabled=False):
+        output = model(src, trg[:, :-1])
+        output_reshape = output.contiguous().view(-1, output.shape[-1])
+        trg = trg[:, 1:].contiguous().view(-1)
 
-            loss = criterion(output_reshape, trg)
+        loss = criterion(output_reshape, trg)
 
         # Loss Scale
-        scaler.scale(loss).backward()
+        # scaler.scale(loss).backward()
+        loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
 
         # update the gradients
-        scaler.step(optimizer)
+        # scaler.step(optimizer)
+        optimizer.step()
 
         # update scaler
-        scaler.update()
+        # scaler.update()
 
         epoch_loss += loss.item()
         if i % 100 == 0:  # Adjust the frequency as needed

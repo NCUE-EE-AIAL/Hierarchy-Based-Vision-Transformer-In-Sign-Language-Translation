@@ -10,7 +10,7 @@ def get_vocabulary(tokenizer, data, vocab_file='vocab.pth'):
 			counter.update(tokenizer.tokenize_en(line))
 
 		# Build the vocabulary
-		vocabulary = vocab(counter, min_freq=1, specials=['<pad>', '<sos>', '<eos>'])
+		vocabulary = vocab(counter, min_freq=1, specials=['<sos>', '<eos>', '<pad>'])
 		torch.save(vocabulary, 'vocab.pth')
 		print("Vocabulary size:", len(vocabulary))
 	else:
