@@ -43,15 +43,19 @@ def get_bleu(hypotheses, reference):
 
 
 def idx_to_word(x, vocab):
-    words = []
-    for i in x:
-        word = vocab.lookup_token(i)  # Retrieve the word using the index
-        if '<' not in word:  # Exclude words with '<', typically special tokens like <pad>, <sos>, <eos>
-            words.append(word)  # Append valid words to the list
-    words = "".join(words)  # Join the list into a sentence with spaces between words
-    words = words.replace('▁', ' ')
+    batch_words = []  # To store the converted sentences for the entire batch
 
-    return words
+    # Iterate through each sentence in the batch
+    for sentence in x:
+        words = []
+        for i in sentence:
+            word = vocab.lookup_token(i)  # Retrieve the word using the index
+            if '<' not in word:  # Exclude words with '<', typically special tokens like <pad>, <sos>, <eos>
+                words.append(word)  # Append valid words to the list
+
+        batch_words.append(words)  # Append valid words to the list
+
+    return batch_words
 
 
 if __name__ == '__main__':

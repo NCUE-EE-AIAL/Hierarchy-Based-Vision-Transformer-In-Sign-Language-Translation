@@ -5,13 +5,13 @@ from torch import nn, optim
 from torch.optim import Adam
 from torch.cuda.amp import autocast, GradScaler
 
-from conf import *
 from data import *
 from models.model.partition_transformer import PartitionTransformer
 from util.bleu import idx_to_word, get_bleu
 from util.epoch_timer import epoch_time
 from util.saved import save_best_models
 from timm.models.layers import DropPath, to_2tuple, trunc_normal_
+from nltk.translate.bleu_score import corpus_bleu
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -61,7 +61,7 @@ criterion = nn.CrossEntropyLoss(ignore_index=pad_token_id,
                                 label_smoothing=0.1)
 
 # create`torch.cuda.amp.GradScaler`
-scaler = GradScaler(init_scale=2.0)
+# scaler = GradScaler(init_scale=2.0)
 
 def train(model, iterator, optimizer, criterion, clip):
     model.train()
@@ -116,19 +116,23 @@ def evaluate(model, iterator, criterion):
             epoch_loss += loss.item()
 
             total_bleu = []
-            for j in range(batch_size):
-                try:
-                    trg_words = idx_to_word(y[j], vocabulary)
-                    output_words = output[j].max(dim=1)[1]
-                    output_words = idx_to_word(output_words, vocabulary)
-                    # print("trg_words : ", trg_words)
-                    # print("output_words : ", output_words)
-                    bleu = get_bleu(hypotheses=output_words.split(), reference=trg_words.split())
 
-                    total_bleu.append(bleu)
-                except Exception as e:
-                    print(f"Error calculating BLEU for batch {i}, item {j}: {e}")
-                    pass
+            try:
+                trg_words = idx_to_word(y, vocabulary)
+                output_idx = output.max(dim=2)[1]
+                output_words = idx_to_word(output_idx, vocabulary)
+                # print("trg_words : ", trg_words)
+                # print("output_words : ", output_words)
+                bleu_1 = corpus_bleu(trg_words, output_words, weights=(1, 0, 0, 0))
+                bleu_2 = corpus_bleu(trg_words, output_words, weights=(0.5, 0.5, 0, 0))
+                bleu_3 = corpus_bleu(trg_words, output_words, weights=(0.3333, 0.3333, 0.3333, 0))
+                bleu = corpus_bleu(trg_words, output_words, weights=(0.25, 0.25, 0.25, 0.25))
+
+                print(f"BLEU-1: {bleu_1:.3f}, BLEU-2: {bleu_2:.3f}, BLEU-3: {bleu_3:.3f}, BLEU-4: {bleu:.3f}")
+                total_bleu.append(bleu)
+            except Exception as e:
+                print(f"Error calculating BLEU for batch {i}, item {j}: {e}")
+                pass
             if total_bleu:
                 total_bleu = sum(total_bleu) / len(total_bleu)
                 batch_bleu.append(total_bleu)

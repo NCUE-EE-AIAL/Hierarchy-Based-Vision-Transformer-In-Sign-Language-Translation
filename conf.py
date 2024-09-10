@@ -5,7 +5,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print('device :', device)
 
 # model parameter setting
-batch_size = 16
+batch_size = 32
 seq_len = 183
 image_size = (1, seq_len)
 image_patch_size = (1, seq_len)
@@ -19,7 +19,7 @@ drop_prob = 0.2
 max_len = 256
 
 # optimizer parameter setting
-init_lr = 0.1
+init_lr = 0.001
 factor = 0.9
 patience = 10
 warmup = 10
