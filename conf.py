@@ -14,7 +14,7 @@ frame_patch_size = 4
 dim = 512
 n_layers = 6
 n_heads = 4
-ffn_hidden = 1024
+ffn_hidden = 512
 drop_prob = 0.2
 max_len = 256
 
@@ -23,8 +23,8 @@ init_lr = 0.001
 factor = 0.9
 patience = 10
 warmup = 10
-epoch = 50
-clip = 5.0
+epoch = 110
+clip = 1.0
 weight_decay = 1e-2
 inf = float('inf')
 # input shape -> (batch_size, channels, frames, height, width)

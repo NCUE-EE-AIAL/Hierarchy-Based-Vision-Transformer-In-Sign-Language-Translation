@@ -24,39 +24,39 @@ class Encoder(nn.Module):
                                                   n_head=n_head,
                                                   drop_prob=drop_prob,
                                                   device=device)
-                                     for _ in range(2)])
+                                     for _ in range(1)])
 
         self.layers2 = nn.ModuleList([EncoderLayer(dim=dim,
                                                    ffn_hidden=ffn_hidden,
                                                    n_head=n_head,
                                                    drop_prob=drop_prob,
                                                    device=device)
-                                      for _ in range(2)])
+                                      for _ in range(1)])
 
         self.layers3 = nn.ModuleList([EncoderLayer(dim=dim,
                                                    ffn_hidden=ffn_hidden,
                                                    n_head=n_head,
                                                    drop_prob=drop_prob,
                                                    device=device)
-                                      for _ in range(2)])
+                                      for _ in range(1)])
 
         self.layers4 = nn.ModuleList([EncoderLayer(dim=dim,
                                                    ffn_hidden=ffn_hidden,
                                                    n_head=n_head,
                                                    drop_prob=drop_prob,
                                                    device=device)
-                                      for _ in range(2)])
+                                      for _ in range(1)])
     def forward(self, x):
         x = self.emb(x)
 
         for layer in self.layers1:
-            x = layer(x, window_size=512)
+            x = layer(x, window_size=128)
         for layer in self.layers2:
-            x = layer(x, window_size=512)
+            x = layer(x, window_size=128)
         for layer in self.layers3:
-            x = layer(x, window_size=512)
+            x = layer(x, window_size=128)
         for layer in self.layers4:
-            x = layer(x, window_size=512)
+            x = layer(x, window_size=128)
 
         return x
 
