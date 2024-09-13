@@ -120,20 +120,19 @@ def evaluate(model, iterator, criterion):
 
             try:
                 trg_words = idx_to_word(y, vocabulary)
-                trg_words = [[item] for item in trg_words]
+                trg_words = [[item.replace('▁', ' ')] for item in trg_words]
                 # print('trg_words:', trg_words)
 
                 output_idx = output.max(dim=2)[1]
                 output_words = idx_to_word(output_idx, vocabulary)
                 # print('output_words:', output_words)
 
-                # smooth_fn = SmoothingFunction().method3 # method1
-                bleu_1 = corpus_bleu(trg_words, output_words, weights=(1, 0, 0, 0))  # , smoothing_function=smooth_fn
-                bleu_2 = corpus_bleu(trg_words, output_words, weights=(0.5, 0.5, 0, 0))
-                bleu_3 = corpus_bleu(trg_words, output_words, weights=(0.33333, 0.33333, 0.33333, 0))
-                bleu = corpus_bleu(trg_words, output_words, weights=(0.25, 0.25, 0.25, 0.25))
+                results = sacrebleu.compute(predictions=output_words,
+                                            references=trg_words,
+                                            tokenize="13a")
 
-                print(f'BLEU-1 Score: {bleu_1:.3f} | BLEU-2 Score: {bleu_2:.3f} | BLEU-3 Score: {bleu_3:.3f} | BLEU Score: {bleu:.3f}')
+                bleu_1, bleu_2, bleu_3, bleu = get_bleu(results["bp"], results["precisions"])
+
                 total_bleu_1.append(bleu_1)
                 total_bleu_2.append(bleu_2)
                 total_bleu_3.append(bleu_3)
@@ -143,10 +142,10 @@ def evaluate(model, iterator, criterion):
                 print(f"Error calculating BLEU for batch {i}, item {e}")
                 pass
 
-            total_bleu_1 = sum(total_bleu_1) / len(total_bleu_1)
-            total_bleu_2 = sum(total_bleu_2) / len(total_bleu_2)
-            total_bleu_3 = sum(total_bleu_3) / len(total_bleu_3)
-            total_bleu = sum(total_bleu) / len(total_bleu)
+            total_bleu_1 = sum(total_bleu_1) / len(total_bleu_1) if total_bleu_1 else 0.0
+            total_bleu_2 = sum(total_bleu_2) / len(total_bleu_2) if total_bleu_2 else 0.0
+            total_bleu_3 = sum(total_bleu_3) / len(total_bleu_3) if total_bleu_3 else 0.0
+            total_bleu = sum(total_bleu) / len(total_bleu) if total_bleu else 0.0
 
             batch_bleu_1.append(total_bleu_1)
             batch_bleu_2.append(total_bleu_2)

@@ -4,42 +4,31 @@ from collections import Counter
 import numpy as np
 
 
-def bleu_stats(hypothesis, reference):
-    """Compute statistics for BLEU."""
-    stats = []
-    stats.append(len(hypothesis))
-    stats.append(len(reference))
+def get_bleu(bp, precisions):
+    """
+    Calculate BLEU-1, BLEU-2, BLEU-3, BLEU-4 based on n-gram precisions and brevity penalty.
 
-    for n in range(1, 5):
-        s_ngrams = Counter(
-            [tuple(hypothesis[i:i + n]) for i in range(len(hypothesis) + 1 - n)]
-        )
-        r_ngrams = Counter(
-            [tuple(reference[i:i + n]) for i in range(len(reference) + 1 - n)]
-        )
+    Args:
+        bp (float): The brevity penalty (BP) value.
+        precisions (list): A list containing n-gram precisions (P₁, P₂, P₃, P₄).
 
-        stats.append(max([sum((s_ngrams & r_ngrams).values()), 0]))
-        stats.append(max([len(hypothesis) + 1 - n, 0]))
-    return stats
+    Returns:
+        dict: A dictionary containing the BLEU-1, BLEU-2, BLEU-3, and BLEU-4 scores.
+    """
+    # Calculate BLEU-1
+    bleu1 = bp * precisions[0]  # BLEU-1 is just BP * P₁
 
+    # Calculate BLEU-2 using geometric mean of P₁ and P₂
+    bleu2 = bp * math.exp((1 / 2) * (math.log(precisions[0]) + math.log(precisions[1])))
 
-def bleu(stats):
-    """Compute BLEU given n-gram statistics."""
-    if len(list(filter(lambda x: x == 0, stats))) > 0:
-        return 0
-    (c, r) = stats[:2]
-    log_bleu_prec = sum(
-        [math.log(float(x) / y) for x, y in zip(stats[2::2], stats[3::2])]
-    ) / 4.
-    return math.exp(min([0, 1 - float(r) / c]) + log_bleu_prec)
+    # Calculate BLEU-3 using geometric mean of P₁, P₂, and P₃
+    bleu3 = bp * math.exp((1 / 3) * (math.log(precisions[0]) + math.log(precisions[1]) + math.log(precisions[2])))
 
+    # Calculate BLEU-4 using geometric mean of P₁, P₂, P₃, and P₄
+    bleu4 = bp * math.exp((1 / 4) * (
+                math.log(precisions[0]) + math.log(precisions[1]) + math.log(precisions[2]) + math.log(precisions[3])))
 
-def get_bleu(hypotheses, reference):
-    """Get validation BLEU score for dev set."""
-    stats = np.array([0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
-    for hyp, ref in zip(hypotheses, reference):
-        stats += np.array(bleu_stats(hyp, ref))
-    return 100 * bleu(stats)
+    return bleu1, bleu2, bleu3, bleu4
 
 
 def idx_to_word(x, vocab):
@@ -53,6 +42,7 @@ def idx_to_word(x, vocab):
             if '<' not in word:  # Exclude words with '<', typically special tokens like <pad>, <sos>, <eos>
                 words.append(word)  # Append valid words to the list
 
+        words = ''.join(words)  # Join the words to form a sentence
         batch_words.append(words)  # Append valid words to the list
 
     return batch_words

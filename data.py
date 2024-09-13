@@ -9,7 +9,7 @@ from util.vocab_libri import get_vocabulary
 
 from torch.utils.data import DataLoader
 from torch.nn.utils.rnn import pad_sequence
-import os
+import evaluate
 
 # get tokenizer
 tokenizer = Tokenizer()
@@ -43,6 +43,8 @@ pad_token_id = vocabulary['<pad>']
 sos_token_id = vocabulary['<sos>']
 eos_token_id = vocabulary['<eos>']
 dec_voc_size = len(vocabulary)
+
+sacrebleu = evaluate.load("sacrebleu")
 
 if __name__ == '__main__':
 	# mp.set_start_method('spawn')
