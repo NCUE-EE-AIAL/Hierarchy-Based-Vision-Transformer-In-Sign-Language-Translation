@@ -5,7 +5,7 @@ from models.model.encoder import Encoder
 from models.model.decoder import Decoder
 
 class PartitionTransformer(nn.Module):
-    def __init__(self, trg_pad_idx, image_size, image_patch_size, max_frames, frame_patch_size, dim, ffn_hidden, n_head, drop_prob, max_len, dec_voc_size, device):
+    def __init__(self, trg_pad_idx, image_size, image_patch_size, max_frames, frame_patch_size, dim, ffn_hidden, n_head, drop_prob, max_len, dec_voc_size, enc_layers, dec_layers, device):
         super().__init__()
         self.device = device
         self.trg_pad_idx = trg_pad_idx
@@ -17,14 +17,16 @@ class PartitionTransformer(nn.Module):
                                ffn_hidden=ffn_hidden,
                                n_head=n_head,
                                drop_prob=drop_prob,
+                               enc_layers=enc_layers,
                                device=device)
 
         self.decoder = Decoder(max_len=max_len,
                                dec_voc_size=dec_voc_size,
-                               dim=dim,
+                               dim=dim[-1],
                                ffn_hidden=ffn_hidden,
-                               n_head=n_head,
+                               n_head=n_head[-1],
                                drop_prob=drop_prob,
+                               dec_layers=dec_layers,
                                device=device)
     def forward(self, src, trg):
         trg_mask = self.make_trg_mask(trg)

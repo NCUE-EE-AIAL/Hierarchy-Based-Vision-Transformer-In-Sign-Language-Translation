@@ -18,8 +18,8 @@ class EncoderLayer(nn.Module):
 
     def forward(self, x, window_size):
         # window partition
-        _, N, _ = x.shape
-        x = window_partition(x, window_size)
+        # _, N, _ = x.shape
+        # x = window_partition(x, window_size)
 
         # compute self attention
         _x = x
@@ -36,5 +36,5 @@ class EncoderLayer(nn.Module):
         x = self.norm2(x + _x)
 
         # reverse window partition
-        x = window_reverse(x, window_size, N)
+        # x = window_reverse(x, window_size, N)
         return x

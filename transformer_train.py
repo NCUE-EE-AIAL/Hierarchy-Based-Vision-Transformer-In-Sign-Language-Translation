@@ -45,6 +45,8 @@ model = PartitionTransformer(trg_pad_idx=pad_token_id,
                              n_head=n_heads,
                              drop_prob=drop_prob,
                              max_len=max_len,
+                             enc_layers=enc_layers,
+                             dec_layers=dec_layers,
                              dec_voc_size=dec_voc_size,
                              device=device)
 
@@ -64,7 +66,7 @@ criterion = nn.CrossEntropyLoss(ignore_index=pad_token_id,
 # create`torch.cuda.amp.GradScaler`
 # scaler = GradScaler(init_scale=2.0)
 
-def train(model, iterator, optimizer, criterion, clip):
+def train(model, iterator, optimizer, criterion, clip, is_warmup: bool):
     model.train()
     epoch_loss = 0
     for i, (x, y) in enumerate(iterator):
@@ -90,11 +92,13 @@ def train(model, iterator, optimizer, criterion, clip):
         # scaler.step(optimizer)
         optimizer.step()
 
+        if not is_warmup:
+            scheduler.step()
         # update scaler
         # scaler.update()
 
         epoch_loss += loss.item()
-        if i % 100 == 0:  # Adjust the frequency as needed
+        if i % 200 == 0:  # Adjust the frequency as needed
             print(f'step: {round((i / len(iterator)) * 100, 2)}% , loss: {loss.item()}')
 
     return epoch_loss / len(iterator)
@@ -120,11 +124,12 @@ def evaluate(model, iterator, criterion):
 
             try:
                 trg_words = idx_to_word(y, vocabulary)
-                trg_words = [[item.replace('▁', ' ')] for item in trg_words]
+                trg_words = [[item.replace('▁', ' ')] for item in trg_words] # t5 tokenizer includes '▁'
                 # print('trg_words:', trg_words)
 
                 output_idx = output.max(dim=2)[1]
                 output_words = idx_to_word(output_idx, vocabulary)
+                output_words = [item.replace('▁', ' ') for item in output_words] # t5 tokenizer includes '▁'
                 # print('output_words:', output_words)
 
                 results = sacrebleu.compute(predictions=output_words,
@@ -152,7 +157,7 @@ def evaluate(model, iterator, criterion):
             batch_bleu_3.append(total_bleu_3)
             batch_bleu.append(total_bleu)
 
-            if i % 50 == 0:
+            if i % 25 == 0:
                 print('step :', round((i / len(iterator)) * 100, 2), '% , loss :', loss.item())
 
     batch_bleu_1 = sum(batch_bleu_1) / len(batch_bleu_1) if batch_bleu_1 else 0.0
@@ -167,12 +172,10 @@ def run(total_epoch, best_loss):
     bleus_1, bleus_2, bleus_3, bleus = [], [], [], []
     for step in range(total_epoch):
         start_time = time.time()
-        train_loss = train(model, train_iter, optimizer, criterion, clip)
+        is_warmup = step < warmup
+        train_loss = train(model, train_iter, optimizer, criterion, clip, is_warmup=is_warmup)
         valid_loss, bleu_1, bleu_2, bleu_3, bleu = evaluate(model, valid_iter, criterion)
         end_time = time.time()
-
-        if step > warmup:
-            scheduler.step(valid_loss)
 
         train_losses.append(train_loss)
         test_losses.append(valid_loss)
