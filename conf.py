@@ -6,34 +6,39 @@ print('device :', device)
 
 # model parameter setting
 batch_size = 32
-seq_len = 183
+seq_len = 255
 image_size = (1, seq_len)
 image_patch_size = (1, seq_len)
 max_frames = 512
 frame_patch_size = 1
-dim = (64, 128, 256, 512) # must be double of the previous layer
-enc_layers=(1, 1, 1, 1)
-dec_layers = 2
-n_heads = (2, 4, 8, 16) # not must be double
-ffn_hidden = 512
+dim = (64, 128, 256) # must be double of the previous layer
+enc_layers=(2, 2, 4)
+dec_layers = 4
+n_heads = (4, 4, 4) # not must be double
+ffn_hidden = 1024
 drop_prob = 0.1
 max_len = 256
 
+# loss
+label_smoothing = 0.2
+
+# lr_scheduler
+t_0 = 18
+end_lr = 1e-7
+
 # optimizer parameter setting
-init_lr = 0.001
-factor = 0.9
-patience = 10
-warmup = 10
+init_lr = 1e-3
+warmup = 4
 epoch = 110
 clip = 1.0
-weight_decay = 1e-3
+weight_decay = 1e-4
 inf = float('inf')
 # input shape -> (batch_size, channels, frames, height, width)
 
 # file path setting
-h2s_train_dir = 'dataset/how2sign/train_2D_Keypoints'
-h2s_val_dir = 'dataset/how2sign/val_2D_Keypoints'
-h2s_test_dir = 'dataset/how2sign/test_2D_Keypoints'
+h2s_train_dir = 'dataset/how2sign/train_2D_Keypoints_85'
+h2s_val_dir = 'dataset/how2sign/val_2D_Keypoints_85'
+h2s_test_dir = 'dataset/how2sign/test_2D_Keypoints_85'
 
 # h2s_train_dir = 'dataset/how2sign/for_test'
 # h2s_test_dir = 'dataset/how2sign/for_test'
@@ -58,8 +63,6 @@ max_len = {max_len}
 
 # Optimizer Parameter Settings
 init_lr = {init_lr}
-factor = {factor}
-patience = {patience}
 warmup = {warmup}
 epoch = {epoch}
 clip = {clip}

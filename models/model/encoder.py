@@ -11,9 +11,9 @@ class Encoder(nn.Module):
 
     def __init__(self,image_size, image_patch_size, max_frames, frame_patch_size, dim: tuple, ffn_hidden, n_head: tuple, drop_prob, enc_layers: tuple, device):
         super().__init__()
-        n_layer1, n_layer2, n_layer3, n_layer4 = enc_layers
-        dim1, dim2, dim3, dim4 = dim
-        n_head1, n_head2, n_head3, n_head4 = n_head
+        n_layer1, n_layer2, n_layer3= enc_layers
+        dim1, dim2, dim3= dim
+        n_head1, n_head2, n_head3= n_head
 
         self.emb = PatchEmbedding(image_size=image_size,
                                   image_patch_size=image_patch_size,
@@ -45,14 +45,6 @@ class Encoder(nn.Module):
                                                    drop_prob=drop_prob,
                                                    device=device)
                                       for _ in range(n_layer3)])
-        self.patch_merge3 = PatchMerging(dim=dim3, device=device)
-
-        self.layers4 = nn.ModuleList([EncoderLayer(dim=dim4,
-                                                   ffn_hidden=ffn_hidden,
-                                                   n_head=n_head4,
-                                                   drop_prob=drop_prob,
-                                                   device=device)
-                                      for _ in range(n_layer4)])
     def forward(self, x):
         x = self.emb(x)
 
@@ -66,12 +58,6 @@ class Encoder(nn.Module):
 
         for layer in self.layers3:
             x = layer(x, window_size=128)
-        x = self.patch_merge3(x)
-
-        for layer in self.layers4:
-            x = layer(x, window_size=128)
-
-
 
         return x
 

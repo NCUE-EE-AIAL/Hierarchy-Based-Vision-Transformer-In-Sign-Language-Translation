@@ -9,31 +9,15 @@ from data import *
 from models.model.partition_transformer import PartitionTransformer
 from util.bleu import idx_to_word, get_bleu
 from util.epoch_timer import epoch_time
-from util.saved import save_best_models
-from timm.models.layers import DropPath, to_2tuple, trunc_normal_
-from nltk.translate.bleu_score import corpus_bleu, SmoothingFunction
+from util.checkpoints import save_best_models, get_best_models
 
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-"""
-def initialize_weights(m):
-    if isinstance(m, nn.Linear):
-        nn.init.kaiming_uniform_(m.weight.data)
-        if m.bias is not None:
-            nn.init.constant_(m.bias, 0)
-    elif isinstance(m, nn.Embedding):
-        nn.init.uniform_(m.weight.data, -0.1, 0.1)
-    elif isinstance(m, nn.LayerNorm):
-        nn.init.constant_(m.bias, 0)
-        nn.init.constant_(m.weight, 1.0)
-"""
 def initialize_weights(m):
     if hasattr(m, 'weight') and m.weight.dim() > 1:
             nn.init.kaiming_uniform_(m.weight.data)
-
-
 
 model = PartitionTransformer(trg_pad_idx=pad_token_id,
                              image_size=image_size,
@@ -58,15 +42,15 @@ optimizer = Adam(params=model.parameters(),
                  lr=init_lr,
                  weight_decay=weight_decay,)
 
-scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=17000, T_mult=1)
+scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=t_0, T_mult=1, eta_min=end_lr)
 
 criterion = nn.CrossEntropyLoss(ignore_index=pad_token_id,
-                                label_smoothing=0.1)
+                                label_smoothing=label_smoothing)
 
 # create`torch.cuda.amp.GradScaler`
 # scaler = GradScaler(init_scale=2.0)
 
-def train(model, iterator, optimizer, criterion, clip, is_warmup: bool):
+def train(model, iterator, optimizer, criterion, clip):
     model.train()
     epoch_loss = 0
     for i, (x, y) in enumerate(iterator):
@@ -75,27 +59,17 @@ def train(model, iterator, optimizer, criterion, clip, is_warmup: bool):
 
         optimizer.zero_grad()
 
-        # FP32 -> FP16
-        # with autocast(enabled=False):
         output = model(src, trg[:, :-1])
         output_reshape = output.contiguous().view(-1, output.shape[-1])
         trg = trg[:, 1:].contiguous().view(-1)
 
         loss = criterion(output_reshape, trg)
 
-        # Loss Scale
-        # scaler.scale(loss).backward()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
 
         # update the gradients
-        # scaler.step(optimizer)
         optimizer.step()
-
-        if not is_warmup:
-            scheduler.step()
-        # update scaler
-        # scaler.update()
 
         epoch_loss += loss.item()
         if i % 200 == 0:  # Adjust the frequency as needed
@@ -125,12 +99,10 @@ def evaluate(model, iterator, criterion):
             try:
                 trg_words = idx_to_word(y, vocabulary)
                 trg_words = [[item.replace('▁', ' ')] for item in trg_words] # t5 tokenizer includes '▁'
-                # print('trg_words:', trg_words)
 
                 output_idx = output.max(dim=2)[1]
                 output_words = idx_to_word(output_idx, vocabulary)
                 output_words = [item.replace('▁', ' ') for item in output_words] # t5 tokenizer includes '▁'
-                # print('output_words:', output_words)
 
                 results = sacrebleu.compute(predictions=output_words,
                                             references=trg_words,
@@ -172,8 +144,7 @@ def run(total_epoch, best_loss):
     bleus_1, bleus_2, bleus_3, bleus = [], [], [], []
     for step in range(total_epoch):
         start_time = time.time()
-        is_warmup = step < warmup
-        train_loss = train(model, train_iter, optimizer, criterion, clip, is_warmup=is_warmup)
+        train_loss = train(model, train_iter, optimizer, criterion, clip)
         valid_loss, bleu_1, bleu_2, bleu_3, bleu = evaluate(model, valid_iter, criterion)
         end_time = time.time()
 
@@ -185,9 +156,11 @@ def run(total_epoch, best_loss):
         bleus.append(bleu)
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
-        if valid_loss < best_loss:
-            best_loss = valid_loss
-            save_best_models(model, bleu, step, save_dir='saved', max_models=3)
+        if step > warmup:
+            scheduler.step()
+
+        # save the best models
+        save_best_models(model, bleu, step, save_dir='result', max_models=2)
 
         f = open('result/train_loss.txt', 'w')
         f.write(str(train_losses))
@@ -219,6 +192,21 @@ def run(total_epoch, best_loss):
         print(f'\tBLEU-1 Score: {bleu_1:.3f} |  BLEU-2 Score: {bleu_2:.3f}')
         print(f'\tBLEU-3 Score: {bleu_3:.3f} |  BLEU Score: {bleu:.3f}')
 
+    # test the final result
+    best_model = get_best_models(save_dir='result')
+    model.load_state_dict(torch.load(best_model))
+    test_loss, bleu_1, bleu_2, bleu_3, bleu = [], [], [], [], []
+    for i in range(5):
+        loss, b1, b2, b3, b = evaluate(model, test_iter, criterion)
+        test_loss.append(loss)
+        bleu_1.append(b1)
+        bleu_2.append(b2)
+        bleu_3.append(b3)
+        bleu.append(b)
+
+    f = open('result/test_result.txt', 'w')
+    f.write(f'Test Loss: {test_loss}\nbleu-1: {bleu_1}\nbleu-2: {bleu_2}\nbleu-3: {bleu_3}\nbleu: {bleu}')
+    f.close()
 
 if __name__ == '__main__':
     run(total_epoch=epoch, best_loss=inf)

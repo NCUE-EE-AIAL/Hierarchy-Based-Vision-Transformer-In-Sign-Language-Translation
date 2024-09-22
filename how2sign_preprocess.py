@@ -3,17 +3,20 @@ import json
 from multiprocessing import Pool
 from glob import glob
 import numpy as np
-
+import cv2
 
 # Define indices for the required keypoints
+# all the hand keypoints
 hand_indices = list(range(21))
-pose_indices = [0, 1, 2, 3, 4, 5, 6, 7, 17, 18]
-face_indices = [48, 51, 54, 56, 58, 38, 41, 44, 47]
-# nose, neck, shoulders, elbows, wrists: 0, 1, 2, 3, 4, 5, 6, 7
-# ear: 17, 18
-# mouth: 48, 51, 54, 56, 58
-# left eye: 38, 41
-# right eye: 44, 47
+
+# neck, shoulders, elbows: 1, 2, 3, 4, 5, 6, 7, 8
+pose_indices = [1, 2, 3, 4, 5, 6, 7, 8]
+
+# face shape: 0, 2, 4, 6, 8, 10, 12,14, 16, 17, 19, 21, 22, 24, 26
+# nose: 27, 30, 31, 33, 35
+# eyes: 36, 38, 39, 41, 68, 42, 43, 45, 46, 69
+# mouth: 48, 50, 52, 54, 56, 58
+face_indices = [0, 2, 4, 6, 8, 10, 12, 14, 16, 17, 19, 21, 22, 24, 26, 27, 31, 33, 35, 36, 38, 39, 41, 68, 42, 43, 45, 46, 69, 48, 50, 52, 54, 56, 58]
 
 
 def find_files(directory, pattern='**/*.json', interval=1):
@@ -109,9 +112,9 @@ def video_prep(vid_dir, output_dir, num_workers=4):
 
 if __name__ == '__main__':
     # video preprocessing
-    video_directory = input("Enter the path to the main folder containing subfolders with video files: ")
-    output_directory = input("Enter the path where the files will be saved: ")
-    video_prep(video_directory, output_directory)
+    # video_directory = input("Enter the path to the main folder containing subfolders with video files: ")
+    # output_directory = input("Enter the path where the files will be saved: ")
+    # video_prep(video_directory, output_directory)
 
     # keypoints preprocessing
     keypoints_directory = input("Enter the path to the main folder containing subfolders with JSON files: ")
