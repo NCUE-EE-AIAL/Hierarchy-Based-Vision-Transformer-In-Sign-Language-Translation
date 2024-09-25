@@ -5,38 +5,36 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print('device :', device)
 
 # model parameter setting
-# input shape -> (batch_size, channels, frames, height, width)
 batch_size = 32
 seq_len = 255
 image_size = (1, seq_len)
 image_patch_size = (1, seq_len)
 max_frames = 512
 frame_patch_size = 1
-window_size = 128
-dim = (64, 128, 256) # must be double of the previous layer
-enc_layers=(2, 2, 4)
+dim = (64, 128, 256)  # must be double of the previous layer
+enc_layers = (2, 2, 4)
 dec_layers = 4
-n_heads = (4, 4, 4) # not must be double
+n_heads = (4, 4, 4)  # not must be double
 ffn_hidden = 1024
 drop_prob = 0.1
 max_len = 256
 
 # loss
-label_smoothing = 0.1
+label_smoothing = 0.2
 
 # lr_scheduler
-t_0 = 18
+T_0 = 30
 end_lr = 1e-7
 
 # optimizer parameter setting
-init_lr = 1e-3
-betas = (0.9, 0.999)
-warmup = 4
-epoch = 110
+init_lr = 5e-4
+betas = (0.9, 0.95)
+warmup = 2
+epoch = 210
 clip = 1.0
 weight_decay = 1e-4
 inf = float('inf')
-
+# input shape -> (batch_size, channels, frames, height, width)
 
 # file path setting
 h2s_train_dir = 'dataset/how2sign/train_2D_Keypoints_85'
@@ -68,7 +66,7 @@ max_len = {max_len}
 label_smoothing = {label_smoothing}
 
 # lr_scheduler
-t_0 = {t_0}
+T_0 = {T_0}
 end_lr = {end_lr}
 
 # Optimizer Parameter Settings

@@ -3,10 +3,9 @@ import time
 
 from torch import nn, optim
 from torch.optim import Adam
-from torch.cuda.amp import autocast, GradScaler
 
 from data import *
-from models.model.partition_transformer import PartitionTransformer
+from models.model.hierarchical_transformer import HierarchicalTransformer
 from util.bleu import idx_to_word, get_bleu
 from util.epoch_timer import epoch_time
 from util.checkpoints import save_best_models, get_best_models
@@ -19,7 +18,7 @@ def initialize_weights(m):
     if hasattr(m, 'weight') and m.weight.dim() > 1:
             nn.init.kaiming_uniform_(m.weight.data)
 
-model = PartitionTransformer(trg_pad_idx=pad_token_id,
+model = HierarchicalTransformer(trg_pad_idx=pad_token_id,
                              image_size=image_size,
                              image_patch_size=image_patch_size,
                              max_frames=max_frames,
@@ -40,15 +39,13 @@ model.apply(initialize_weights)
 
 optimizer = Adam(params=model.parameters(),
                  lr=init_lr,
-                 weight_decay=weight_decay,)
+                 weight_decay=weight_decay,
+                 betas=betas)
 
-scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=t_0, T_mult=1, eta_min=end_lr)
+scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=T_0, T_mult=1, eta_min=end_lr)
 
 criterion = nn.CrossEntropyLoss(ignore_index=pad_token_id,
                                 label_smoothing=label_smoothing)
-
-# create`torch.cuda.amp.GradScaler`
-# scaler = GradScaler(init_scale=2.0)
 
 def train(model, iterator, optimizer, criterion, clip):
     model.train()
@@ -99,10 +96,12 @@ def evaluate(model, iterator, criterion):
             try:
                 trg_words = idx_to_word(y, vocabulary)
                 trg_words = [[item.replace('▁', ' ')] for item in trg_words] # t5 tokenizer includes '▁'
+                # print('trg_words:', trg_words)
 
                 output_idx = output.max(dim=2)[1]
                 output_words = idx_to_word(output_idx, vocabulary)
                 output_words = [item.replace('▁', ' ') for item in output_words] # t5 tokenizer includes '▁'
+                # print('output_words:', output_words)
 
                 results = sacrebleu.compute(predictions=output_words,
                                             references=trg_words,
@@ -195,16 +194,16 @@ def run(total_epoch, best_loss):
     # test the final result
     best_model = get_best_models(save_dir='result')
     model.load_state_dict(torch.load(best_model))
-    test_loss, bleu_1, bleu_2, bleu_3, bleu = [], [], [], [], []
-    for i in range(5):
-        loss, b1, b2, b3, b = evaluate(model, test_iter, criterion)
-        test_loss.append(loss)
-        bleu_1.append(b1)
-        bleu_2.append(b2)
-        bleu_3.append(b3)
-        bleu.append(b)
+
+    test_loss, bleu_1, bleu_2, bleu_3, bleu = evaluate(model, test_iter, criterion)
 
     f = open('result/test_result.txt', 'w')
+    f.write(f'Test Loss: {test_loss}\nbleu-1: {bleu_1}\nbleu-2: {bleu_2}\nbleu-3: {bleu_3}\nbleu: {bleu}')
+    f.close()
+
+    test_loss, bleu_1, bleu_2, bleu_3, bleu = evaluate(model, valid_iter, criterion)
+
+    f = open('result/valid_result.txt', 'w')
     f.write(f'Test Loss: {test_loss}\nbleu-1: {bleu_1}\nbleu-2: {bleu_2}\nbleu-3: {bleu_3}\nbleu: {bleu}')
     f.close()
 

@@ -4,7 +4,7 @@ import torch
 from models.model.encoder import Encoder
 from models.model.decoder import Decoder
 
-class PartitionTransformer(nn.Module):
+class HierarchicalTransformer(nn.Module):
     def __init__(self, trg_pad_idx, image_size, image_patch_size, max_frames, frame_patch_size, dim, ffn_hidden, n_head, drop_prob, max_len, dec_voc_size, enc_layers, dec_layers, device):
         super().__init__()
         self.device = device

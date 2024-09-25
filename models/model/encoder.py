@@ -45,6 +45,7 @@ class Encoder(nn.Module):
                                                    drop_prob=drop_prob,
                                                    device=device)
                                       for _ in range(n_layer3)])
+
     def forward(self, x):
         x = self.emb(x)
 
