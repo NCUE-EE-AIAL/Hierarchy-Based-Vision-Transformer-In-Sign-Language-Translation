@@ -3,6 +3,7 @@ import time
 
 from torch import nn, optim
 from torch.optim import Adam
+from torch.cuda.amp import autocast, GradScaler
 
 from data import *
 from models.model.hierarchical_transformer import HierarchicalTransformer
@@ -47,6 +48,9 @@ scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=T_0, T
 criterion = nn.CrossEntropyLoss(ignore_index=pad_token_id,
                                 label_smoothing=label_smoothing)
 
+# Initialize the GradScaler
+scaler = GradScaler(init_scale=2.0)
+
 def train(model, iterator, optimizer, criterion, clip):
     model.train()
     epoch_loss = 0
@@ -56,17 +60,24 @@ def train(model, iterator, optimizer, criterion, clip):
 
         optimizer.zero_grad()
 
-        output = model(src, trg[:, :-1])
-        output_reshape = output.contiguous().view(-1, output.shape[-1])
-        trg = trg[:, 1:].contiguous().view(-1)
+        # Use autocast for mixed-precision training
+        with autocast():
+            output = model(src, trg[:, :-1])
+            output_reshape = output.contiguous().view(-1, output.shape[-1])
+            trg = trg[:, 1:].contiguous().view(-1)
 
-        loss = criterion(output_reshape, trg)
+            loss = criterion(output_reshape, trg)
 
-        loss.backward()
+        # Scale the loss before backward
+        scaler.scale(loss).backward()
+
+        # Clip gradients with scaler
+        scaler.unscale_(optimizer)
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
 
-        # update the gradients
-        optimizer.step()
+        # Update the gradients using scaler
+        scaler.step(optimizer)
+        scaler.update()
 
         epoch_loss += loss.item()
         if i % 200 == 0:  # Adjust the frequency as needed
