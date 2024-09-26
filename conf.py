@@ -4,6 +4,10 @@ import torch
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print('device :', device)
 
+# load pre-trained model or not
+pretrained = False
+pretrained_model = 'result/3.85_200epoch/model-166-3.9138.pt'
+
 # model parameter setting
 batch_size = 32
 seq_len = 255
@@ -23,14 +27,14 @@ max_len = 256
 label_smoothing = 0.2
 
 # lr_scheduler
-T_0 = 30
+T_0 = 20
 end_lr = 1e-7
 
 # optimizer parameter setting
 init_lr = 5e-4
 betas = (0.9, 0.95)
-warmup = 2
-epoch = 210
+warmup = 6
+epoch = 105
 clip = 1.0
 weight_decay = 1e-4
 inf = float('inf')
@@ -47,6 +51,10 @@ h2s_test_dir = 'dataset/how2sign/test_2D_Keypoints_85'
 
 # Prepare the information as a formatted string
 info = f"""
+# load pre-trained model or not
+pretrained = {pretrained}
+pretrained_model = {pretrained_model}
+
 # Model Parameter Settings
 batch_size = {batch_size}
 seq_len = {seq_len}

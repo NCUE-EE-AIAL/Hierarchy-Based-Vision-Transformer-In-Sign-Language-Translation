@@ -11,10 +11,10 @@ class EncoderLayer(nn.Module):
     def __init__(self, dim, ffn_hidden, n_head, drop_prob, device):
         super().__init__()
         self.window_attention = MultiHeadAttention(dim=dim, num_heads=n_head, drop_prob=drop_prob, device=device)
-        self.norm1 = LayerNorm(dim=dim, device=device)
+        self.norm1 = nn.LayerNorm(normalized_shape=dim, device=device)
 
         self.mlp = Mlp(in_features=dim, hidden_features=ffn_hidden, drop=drop_prob, device=device)
-        self.norm2 = LayerNorm(dim=dim, device=device)
+        self.norm2 = nn.LayerNorm(normalized_shape=dim, device=device)
 
     def forward(self, x, window_size):
         # window partition
@@ -23,17 +23,15 @@ class EncoderLayer(nn.Module):
 
         # compute self attention
         _x = x
+        x = self.norm1(x)
         x = self.window_attention(q=x, k=x, v=x)
-
-        # add and norm
-        x = self.norm1(x + _x)
+        x = x + _x  # Residual connection
         
         # positionwise feed forward network
         _x = x
+        x = self.norm2(x)
         x = self.mlp(x)
-      
-        # add and norm
-        x = self.norm2(x + _x)
+        x = x + _x  # Residual connection
 
         # reverse window partition
         x = window_reverse(x, window_size, N)

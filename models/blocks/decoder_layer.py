@@ -10,34 +10,32 @@ class DecoderLayer(nn.Module):
     def __init__(self, dim, ffn_hidden, n_head, drop_prob, device):
         super().__init__()
         self.self_attention = MultiHeadAttention(dim=dim, num_heads=n_head, drop_prob=drop_prob, device=device)
-        self.norm1 = LayerNorm(dim=dim, device=device)
+        self.norm1 = nn.LayerNorm(normalized_shape=dim, device=device)
 
         self.enc_dec_attention = MultiHeadAttention(dim=dim, num_heads=n_head, drop_prob=drop_prob, device=device)
-        self.norm2 = LayerNorm(dim=dim, device=device)
+        self.norm2 = nn.LayerNorm(normalized_shape=dim, device=device)
 
         self.mlp = Mlp(in_features=dim, hidden_features=ffn_hidden, drop=drop_prob, device=device)
-        self.norm3 = LayerNorm(dim=dim, device=device)
+        self.norm3 = nn.LayerNorm(normalized_shape=dim, device=device)
 
     def forward(self, dec, enc, trg_mask):
         # 1. compute self attention
         _x = dec
-        x = self.self_attention(q=dec, k=dec, v=dec, mask=trg_mask)
-        
-        # 2. add and norm
-        x = self.norm1(x + _x)
+        x = self.norm1(dec)
+        x = self.self_attention(q=x, k=x, v=x, mask=trg_mask)
+        x = x + _x  # Residual connection
 
         if enc is not None:
             # 3. compute encoder - decoder attention
             _x = x
+            x = self.norm2(x)
             x = self.enc_dec_attention(q=x, k=enc, v=enc, mask=None)
-            
-            # 4. add and norm
-            x = self.norm2(x + _x)
+            x = x + _x  # Residual connection
 
         # 5. positionwise feed forward network
         _x = x
+        x = self.norm3(x)
         x = self.mlp(x)
-        
-        # 6. add and norm
-        x = self.norm3(x + _x)
+        x = x + _x  # Residual connection
+
         return x
