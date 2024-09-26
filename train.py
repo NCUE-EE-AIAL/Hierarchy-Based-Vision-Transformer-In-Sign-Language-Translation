@@ -38,6 +38,14 @@ model = HierarchicalTransformer(trg_pad_idx=pad_token_id,
 print(f'The model has {count_parameters(model):,} trainable parameters')
 model.apply(initialize_weights)
 
+# Load the pre-trained model weights
+if pretrained:
+    pretrained_state_dict = torch.load(pretrained_model, map_location=device)
+    model_state_dict = model.state_dict()
+    pretrained_dict = {k: v for k, v in pretrained_state_dict.items() if k in model_state_dict and v.size() == model_state_dict[k].size()}
+    model_state_dict.update(pretrained_dict)
+    model.load_state_dict(model_state_dict)
+
 optimizer = Adam(params=model.parameters(),
                  lr=init_lr,
                  weight_decay=weight_decay,
