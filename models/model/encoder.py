@@ -4,6 +4,7 @@ import torch
 from models.blocks.encoder_layer import EncoderLayer
 from models.embedding.patch_embeddings import PatchEmbedding
 from models.layers.patch_merging import PatchMerging
+from models.layers.mask_operation import patch_merge_mask
 
 # not to use this class
 # split the embedding and encoder layer
@@ -46,19 +47,21 @@ class Encoder(nn.Module):
                                                    device=device)
                                       for _ in range(n_layer3)])
 
-    def forward(self, x):
+    def forward(self, x, src_mask):
         x = self.emb(x)
 
         for layer in self.layers1:
-            x = layer(x, window_size=128)
+            x = layer(x, 128, src_mask)
         x = self.patch_merge1(x)
+        merge_mask = patch_merge_mask(src_mask)
 
         for layer in self.layers2:
-            x = layer(x, window_size=128)
+            x = layer(x, 128, merge_mask)
         x = self.patch_merge2(x)
+        merge_mask = patch_merge_mask(merge_mask)
 
         for layer in self.layers3:
-            x = layer(x, window_size=128)
+            x = layer(x, 128, merge_mask)
 
         return x
 

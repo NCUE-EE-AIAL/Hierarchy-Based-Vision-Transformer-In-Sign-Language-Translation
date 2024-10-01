@@ -19,7 +19,7 @@ def initialize_weights(m):
     if hasattr(m, 'weight') and m.weight.dim() > 1:
             nn.init.kaiming_uniform_(m.weight.data)
 
-model = HierarchicalTransformer(trg_pad_idx=pad_token_id,
+model = HierarchicalTransformer(pad_idx=pad_token_id,
                              image_size=image_size,
                              image_patch_size=image_patch_size,
                              max_frames=max_frames,

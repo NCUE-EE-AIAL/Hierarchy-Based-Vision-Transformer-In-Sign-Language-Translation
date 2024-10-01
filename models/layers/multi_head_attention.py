@@ -53,7 +53,6 @@ class MultiHeadAttention(nn.Module):
 
         q = q * self.scale
         attn = (q @ k.transpose(-2, -1))
-
         if mask is not None:
             attn = attn.masked_fill(mask == 0, -10000)
 
