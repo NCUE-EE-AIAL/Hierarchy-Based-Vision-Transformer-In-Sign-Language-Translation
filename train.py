@@ -16,8 +16,18 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 def initialize_weights(m):
-    if hasattr(m, 'weight') and m.weight.dim() > 1:
-            nn.init.kaiming_uniform_(m.weight.data)
+    # if hasattr(m, 'weight') and m.weight.dim() > 1:
+    # nn.init.kaiming_uniform_(m.weight.data)  # He initialization
+    if isinstance(m, nn.Linear):
+        nn.init.normal_(m.weight, mean=0.0, std=0.02)
+        if isinstance(m, nn.Linear) and m.bias is not None:
+            nn.init.constant_(m.bias, 0)
+    elif isinstance(m, nn.LayerNorm):
+        nn.init.constant_(m.bias, 0)
+        nn.init.constant_(m.weight, 1.0)
+    elif isinstance(m, nn.Embedding):
+        nn.init.normal_(m.weight, mean=0.0, std=0.02)
+
 
 model = HierarchicalTransformer(pad_idx=pad_token_id,
                              image_size=image_size,
@@ -105,16 +115,17 @@ def evaluate(model, iterator, criterion):
             try:
                 trg_words = idx_to_word(y, vocabulary)
                 trg_words = [[item.replace('▁', ' ')] for item in trg_words] # t5 tokenizer includes '▁'
-                # print('trg_words:', trg_words)
+                print('trg_words:', trg_words)
 
                 output_idx = output.max(dim=2)[1]
                 output_words = idx_to_word(output_idx, vocabulary)
                 output_words = [item.replace('▁', ' ') for item in output_words] # t5 tokenizer includes '▁'
-                # print('output_words:', output_words)
+                print('output_words:', output_words)
 
                 results = sacrebleu.compute(predictions=output_words,
                                             references=trg_words,
-                                            tokenize="13a")
+                                            tokenize="13a",
+                                            smooth_method="exp")
 
                 bleu_1, bleu_2, bleu_3, bleu = get_bleu(results["bp"], results["precisions"])
 
