@@ -5,7 +5,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print('device :', device)
 
 # load pre-trained model or not
-pretrained = False
+pretrained = True
 pretrained_model = 'result/3.85_200epoch/model-166-3.9138.pt'
 
 # model parameter setting
@@ -16,7 +16,7 @@ image_patch_size = (1, seq_len)
 max_frames = 512
 frame_patch_size = 1
 dim = (64, 128, 256)  # must be double of the previous layer
-enc_layers = (2, 2, 4)
+enc_layers = (1, 1, 2)
 dec_layers = 4
 n_heads = (4, 4, 4)  # not must be double
 ffn_hidden = 1024
@@ -31,12 +31,12 @@ T_0 = 20
 end_lr = 1e-7
 
 # optimizer parameter setting
-init_lr = 5e-4
+init_lr = 1e-3
 betas = (0.9, 0.95)
 warmup = 6
-epoch = 105
+epoch = 205
 clip = 1.0
-weight_decay = 1e-4
+weight_decay = 5e-5
 inf = float('inf')
 # input shape -> (batch_size, channels, frames, height, width)
 

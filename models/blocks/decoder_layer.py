@@ -18,7 +18,7 @@ class DecoderLayer(nn.Module):
         self.mlp = Mlp(in_features=dim, hidden_features=ffn_hidden, drop=drop_prob, device=device)
         self.norm3 = nn.LayerNorm(normalized_shape=dim, device=device)
 
-    def forward(self, dec, enc, trg_mask):
+    def forward(self, dec, enc, trg_mask, cross_attn_mask):
         # 1. compute self attention
         _x = dec
         x = self.norm1(dec)
@@ -29,7 +29,7 @@ class DecoderLayer(nn.Module):
             # 3. compute encoder - decoder attention
             _x = x
             x = self.norm2(x)
-            x = self.enc_dec_attention(q=x, k=enc, v=enc, mask=None)
+            x = self.enc_dec_attention(q=x, k=enc, v=enc, mask=cross_attn_mask)
             x = x + _x  # Residual connection
 
         # 5. positionwise feed forward network

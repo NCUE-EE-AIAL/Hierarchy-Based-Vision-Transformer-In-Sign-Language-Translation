@@ -115,12 +115,12 @@ def evaluate(model, iterator, criterion):
             try:
                 trg_words = idx_to_word(y, vocabulary)
                 trg_words = [[item.replace('▁', ' ')] for item in trg_words] # t5 tokenizer includes '▁'
-                print('trg_words:', trg_words)
+                # print('trg_words:', trg_words)
 
                 output_idx = output.max(dim=2)[1]
                 output_words = idx_to_word(output_idx, vocabulary)
                 output_words = [item.replace('▁', ' ') for item in output_words] # t5 tokenizer includes '▁'
-                print('output_words:', output_words)
+                # print('output_words:', output_words)
 
                 results = sacrebleu.compute(predictions=output_words,
                                             references=trg_words,

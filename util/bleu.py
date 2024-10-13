@@ -39,6 +39,9 @@ def idx_to_word(x, vocab):
         words = []
         for i in sentence:
             word = vocab.lookup_token(i)  # Retrieve the word using the index
+            if '<eos>' in word:  # Stop if the end of sentence token is reached
+                break
+
             if '<' not in word:  # Exclude words with '<', typically special tokens like <pad>, <sos>, <eos>
                 words.append(word)  # Append valid words to the list
 

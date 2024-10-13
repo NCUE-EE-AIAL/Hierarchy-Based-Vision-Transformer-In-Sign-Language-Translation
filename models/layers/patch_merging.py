@@ -25,7 +25,7 @@ class PatchMerging(nn.Module):
             self.device)  # Reduce frame dimension and double feature dim
         self.norm = norm_layer(2 * dim).to(self.device)
 
-    def forward(self, x):
+    def forward(self, x, mask=None):
         """
         Forward function.
         x: (batch_size, frames, dim)
@@ -48,7 +48,15 @@ class PatchMerging(nn.Module):
         x = self.norm(x)  # (batch_size, frames // 2, dim * 2)
         x = self.reduction(x)  # Reduce the dimension if necessary
 
-        return x
+        if mask is not None:
+            batch_size, _, _, seq_len = mask.shape
+            assert seq_len % 2 == 0, "Sequence length must be divisible by 2 for patch merging"
+
+            # Reshape the mask to group every two patches together
+            mask = mask.view(batch_size, 1, 1, seq_len // 2, 2)  # (batch_size, 1, 1, 256, 2)
+            mask = mask.max(dim=-1)[0]
+
+        return x, mask
 
 if __name__ == "__main__":
     # Test the function with input shape (32, 512, 64)

@@ -31,8 +31,8 @@ class HierarchicalTransformer(nn.Module):
     def forward(self, src, trg):
         src_mask = self.make_src_mask(src)
         trg_mask = self.make_trg_mask(trg)
-        enc_src = self.encoder(src, src_mask)
-        output = self.decoder(trg, enc_src, trg_mask)
+        enc_src, merge_mask = self.encoder(src, src_mask)
+        output = self.decoder(trg, enc_src, trg_mask, merge_mask)
         return output
 
     def make_src_mask(self, src):
@@ -43,7 +43,7 @@ class HierarchicalTransformer(nn.Module):
         return src_mask
 
     def make_trg_mask(self, trg):
-        trg_pad_mask = (trg != self.pad_idx).unsqueeze(1).unsqueeze(3).to(self.device)
+        trg_pad_mask = (trg != self.pad_idx).unsqueeze(1).unsqueeze(3).to(self.device)  # Shape: (batch_size, 1, 512, 1)
         trg_len = trg.shape[1]
         trg_sub_mask = torch.tril(torch.ones(trg_len, trg_len)).type(torch.ByteTensor).to(self.device)
         trg_mask = trg_pad_mask & trg_sub_mask

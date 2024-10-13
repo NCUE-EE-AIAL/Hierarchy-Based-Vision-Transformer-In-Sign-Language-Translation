@@ -1,49 +1,54 @@
 import torch
 
-# Test parameters
-batch_size = 1
-seq_len = 12  # Sequence length must be divisible by window_size
-window_size = 4
+def windows_partition(x, window_size, mask=None):
+    """
+    Args:
+        x: (B, N, C)
+        window_size (int): window frame size
 
-# Create a dummy mask tensor of shape (batch_size, 1, 1, seq_len)
-mask = torch.randn(batch_size, 1, 1, seq_len)
+    Returns:
+        windows: (num_windows*B, window_size, C)
+    """
+    B, N, C = x.shape
+    x = x.view(B, N // window_size, window_size, C)
+    windows = x.contiguous().view(-1, window_size, C)
 
-# Run the transformation logic
-def test_mask_function(mask, window_size):
-    batch_size, _, _, seq_len = mask.shape
-    assert seq_len % window_size == 0, "Sequence length must be divisible by the window size"
+    if mask is not None:
+        batch_size, _, _, seq_len = mask.shape
+        assert seq_len % window_size == 0, "Sequence length must be divisible by the window size"
 
-    mask = mask.view(batch_size, 1, 1, seq_len // window_size, window_size)
-    mask = mask.permute(0, 3, 1, 2, 4).contiguous()  # (batch_size, num_windows, 1, 1, window_size)
-    mask = mask.view(-1, 1, 1, window_size)  # (batch_size * num_windows, 1, 1, window_size)
+        mask = mask.view(batch_size, 1, 1, seq_len // window_size, window_size)
+        mask = mask.permute(0, 3, 1, 2, 4).contiguous()  # (batch_size, num_windows, 1, 1, window_size)
+        mask = mask.view(-1, 1, 1, window_size)  # (batch_size * num_windows, 1, 1, window_size)
 
-    return mask
-
-def reverse_mask_function(mask, window_size, seq_len):
-    batch_size = mask.size(0) // (seq_len // window_size)  # Compute batch size
-    num_windows = seq_len // window_size  # Number of windows
-
-    mask = mask.view(batch_size, num_windows, 1, 1, window_size)
-    mask = mask.permute(0, 2, 3, 1, 4).contiguous()
-    mask = mask.view(batch_size, 1, 1, seq_len)
-
-    return mask
-
-# Test the function
-# result_mask = test_mask_function(mask, window_size)
-# reverse_mask = reverse_mask_function(result_mask, window_size, seq_len)
-#
-# print(result_mask.shape)
-# print(mask)
-# print(result_mask)
-#
-# print(reverse_mask.shape)
-# print(reverse_mask)
-
-import torch
+    return windows, mask
 
 
-def shift_windows(input_tensor, shift_size, mask=None):
+def windows_partition_reverse(windows, window_size, N, mask=None):
+    """
+    Args:
+        windows: (num_windows*B, window_size, window_size, C)  # Tensor of windows flattened across the batch
+        window_size (int): Window size  # Size of the windows
+        N (int): length of the original sequence
+
+    Returns:
+        x: (B, N, C)  # Reconstructed tensor with shape (Batch size, N, Channels)
+    """
+    B = int(windows.shape[0] / (N / window_size))
+    x = windows.view(B, N // window_size, window_size, -1)
+    x = x.contiguous().view(B, N, -1)
+
+    if mask is not None:
+        batch_size = int(mask.shape[0] / (N / window_size))
+
+        mask = mask.view(batch_size, N // window_size, 1, 1, window_size)
+        mask = mask.permute(0, 2, 3, 1, 4).contiguous()
+        mask = mask.view(batch_size, 1, 1, N)
+
+    return x, mask
+
+
+def windows_shift(input_tensor, shift_size, mask=None):
     """
     Shift windows in the input tensor by shift_size.
 
@@ -69,7 +74,7 @@ def shift_windows(input_tensor, shift_size, mask=None):
     return shifted_tensor, mask
 
 
-def reverse_shift_windows(shifted_tensor, shift_size, mask=None):
+def windows_shift_reverse(shifted_tensor, shift_size, mask=None):
     """
     Reverse the window shift applied by the shift_windows function.
 
@@ -93,15 +98,3 @@ def reverse_shift_windows(shifted_tensor, shift_size, mask=None):
         mask = torch.cat([second_part, first_part], dim=-1)
 
     return reversed_tensor, mask
-
-# Example input
-input_tensor = torch.randn(1, 16, 1)  # (batch_size=4, seq_len=512, dimension=128)
-input_mask = torch.randn(1, 1, 1, 16)
-
-# Apply window shift with shift_size = 64
-shifted_tensor, shifted_mask = shift_windows(input_tensor, 4, input_mask)
-original_tensor, original_mask = reverse_shift_windows(shifted_tensor, 4, shifted_mask)
-
-print("Original Shape:", input_mask)
-print("Shifted Shape:", shifted_mask)
-# print("Original Shape:", original_mask)
