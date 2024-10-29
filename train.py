@@ -35,7 +35,7 @@ model = HierarchicalTransformer(pad_idx=pad_token_id,
                              max_frames=max_frames,
                              frame_patch_size=frame_patch_size,
                              dim=dim,
-                             ffn_hidden=ffn_hidden,
+                             ffn_hidden_ratio=ffn_hidden_ratio,
                              n_head=n_heads,
                              drop_prob=drop_prob,
                              max_len=max_len,
@@ -159,20 +159,15 @@ def evaluate(model, iterator, criterion):
 
 
 def run(total_epoch, best_loss):
-    train_losses, test_losses = [], []
-    bleus_1, bleus_2, bleus_3, bleus = [], [], [], []
+    train_val_loss, bleus = [], []
     for step in range(total_epoch):
         start_time = time.time()
         train_loss = train(model, train_iter, optimizer, criterion, clip)
         valid_loss, bleu_1, bleu_2, bleu_3, bleu = evaluate(model, valid_iter, criterion)
         end_time = time.time()
 
-        train_losses.append(train_loss)
-        test_losses.append(valid_loss)
-        bleus_1.append(bleu_1)
-        bleus_2.append(bleu_2)
-        bleus_3.append(bleu_3)
-        bleus.append(bleu)
+        train_val_loss.append(f'{step},{train_loss},{valid_loss}')
+        bleus.append(f'{step},{bleu_1},{bleu_2},{bleu_3},{bleu}')
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
         if step > warmup:
@@ -181,28 +176,12 @@ def run(total_epoch, best_loss):
         # save the best models
         save_best_models(model, bleu, step, save_dir='result', max_models=2)
 
-        f = open('result/train_loss.txt', 'w')
-        f.write(str(train_losses))
+        f = open('result/train_val_loss.txt', 'w')
+        f.write(str(train_val_loss))
         f.close()
 
-        f = open('result/bleu_1.txt', 'w')
-        f.write(str(bleus_1))
-        f.close()
-
-        f = open('result/bleu_2.txt', 'w')
-        f.write(str(bleus_2))
-        f.close()
-
-        f = open('result/bleu_3.txt', 'w')
-        f.write(str(bleus_3))
-        f.close()
-
-        f = open('result/bleu.txt', 'w')
+        f = open('result/bleus.txt', 'w')
         f.write(str(bleus))
-        f.close()
-
-        f = open('result/test_loss.txt', 'w')
-        f.write(str(test_losses))
         f.close()
 
         print(f'Epoch: {step + 1} | Time: {epoch_mins}m {epoch_secs}s')

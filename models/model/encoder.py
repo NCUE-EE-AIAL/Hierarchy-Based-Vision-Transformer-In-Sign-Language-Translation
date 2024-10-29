@@ -9,7 +9,7 @@ from models.layers.patch_merging import PatchMerging
 # split the embedding and encoder layer
 class Encoder(nn.Module):
 
-    def __init__(self,image_size, image_patch_size, max_frames, frame_patch_size, dim: tuple, ffn_hidden, n_head: tuple, drop_prob, enc_layers: tuple, device):
+    def __init__(self,image_size, image_patch_size, max_frames, frame_patch_size, dim: tuple, ffn_hidden_ratio, n_head: tuple, drop_prob, enc_layers: tuple, device):
         super().__init__()
         n_layer1, n_layer2, n_layer3= enc_layers
         dim1, dim2, dim3= dim
@@ -24,7 +24,7 @@ class Encoder(nn.Module):
                                   device=device)
 
         self.layers1 = nn.ModuleList([EncoderLayer(dim=dim1,
-                                                  ffn_hidden=ffn_hidden,
+                                                  ffn_hidden_ratio=ffn_hidden_ratio,
                                                   n_head=n_head1,
                                                   drop_prob=drop_prob,
                                                   device=device)
@@ -32,7 +32,7 @@ class Encoder(nn.Module):
         self.patch_merge1 = PatchMerging(dim=dim1, device=device)
 
         self.layers2 = nn.ModuleList([EncoderLayer(dim=dim2,
-                                                   ffn_hidden=ffn_hidden,
+                                                   ffn_hidden_ratio=ffn_hidden_ratio,
                                                    n_head=n_head2,
                                                    drop_prob=drop_prob,
                                                    device=device)
@@ -40,7 +40,7 @@ class Encoder(nn.Module):
         self.patch_merge2 = PatchMerging(dim=dim2, device=device)
 
         self.layers3 = nn.ModuleList([EncoderLayer(dim=dim3,
-                                                   ffn_hidden=ffn_hidden,
+                                                   ffn_hidden_ratio=ffn_hidden_ratio,
                                                    n_head=n_head3,
                                                    drop_prob=drop_prob,
                                                    device=device)

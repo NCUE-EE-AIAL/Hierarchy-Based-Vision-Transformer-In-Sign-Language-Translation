@@ -5,6 +5,7 @@ from conf import *
 # from util.data_loader import DataLoader
 from util.tokenizer import Tokenizer
 from util.How2signDataset import How2signDataset
+from util.YoutubeASLDataset import YoutubeASLDataset
 from util.vocab_libri import get_vocabulary
 
 from torch.utils.data import DataLoader
@@ -19,13 +20,15 @@ data = train_dataset.load_y().values()
 vocabulary = get_vocabulary(tokenizer, data, vocab_file='vocab.pth')
 
 # initialize dataset
+# How2Sign dataset
 train_dataset = How2signDataset(files_dir=h2s_train_dir, tokenizer=tokenizer, vocabulary=vocabulary, seq_len=seq_len, time_len=max_frames)
 val_dataset = How2signDataset(files_dir=h2s_val_dir, tokenizer=tokenizer, vocabulary=vocabulary, seq_len=seq_len, time_len=max_frames)
 test_dataset = How2signDataset(files_dir=h2s_test_dir, tokenizer=tokenizer, vocabulary=vocabulary, seq_len=seq_len, time_len=max_frames)
 
+# YoutubeASL dataset
+# train_dataset = YoutubeASLDataset(files_dir=yt_asl_dir, tokenizer=tokenizer, vocabulary=vocabulary, seq_len=seq_len, time_len=max_frames)
+
 pad_token_id = vocabulary['<pad>']
-sos_token_id = vocabulary['<sos>']
-eos_token_id = vocabulary['<eos>']
 dec_voc_size = len(vocabulary)
 
 def collate_fn(batch):

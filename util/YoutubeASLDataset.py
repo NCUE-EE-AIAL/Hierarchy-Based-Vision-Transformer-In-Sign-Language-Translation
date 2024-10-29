@@ -5,7 +5,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
-class How2signDataset(Dataset):
+class YoutubeASLDataset(Dataset):
     def __init__(self, files_dir, tokenizer, seq_len, time_len, vocabulary=None):
         self.seq_len = seq_len
         self.time_len = time_len
@@ -65,4 +65,3 @@ class How2signDataset(Dataset):
         y = self.get_y(json_base)
 
         return x, y
-

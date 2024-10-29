@@ -7,18 +7,18 @@ from models.layers.windows_operation import windows_partition, windows_partition
 
 class EncoderLayer(nn.Module):
 
-    def __init__(self, dim, ffn_hidden, n_head, drop_prob, device):
+    def __init__(self, dim, ffn_hidden_ratio, n_head, drop_prob, device):
         super().__init__()
         self.window_attention1 = MultiHeadAttention(dim=dim, num_heads=n_head, drop_prob=drop_prob, device=device)
         self.norm1 = nn.LayerNorm(normalized_shape=dim, device=device)
 
-        self.mlp1 = Mlp(in_features=dim, hidden_features=ffn_hidden, drop=drop_prob, device=device)
+        self.mlp1 = Mlp(in_features=dim, hidden_features=ffn_hidden_ratio*dim, drop=drop_prob, device=device)
         self.norm2 = nn.LayerNorm(normalized_shape=dim, device=device)
 
         self.window_attention2 = MultiHeadAttention(dim=dim, num_heads=n_head, drop_prob=drop_prob, device=device)
         self.norm3 = nn.LayerNorm(normalized_shape=dim, device=device)
 
-        self.mlp2 = Mlp(in_features=dim, hidden_features=ffn_hidden, drop=drop_prob, device=device)
+        self.mlp2 = Mlp(in_features=dim, hidden_features=ffn_hidden_ratio*dim, drop=drop_prob, device=device)
         self.norm4 = nn.LayerNorm(normalized_shape=dim, device=device)
 
     def forward(self, x, window_size, src_mask):

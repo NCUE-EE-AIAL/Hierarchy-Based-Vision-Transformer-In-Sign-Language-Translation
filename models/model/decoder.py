@@ -7,7 +7,7 @@ from models.embedding.token_embeddings import TokenEmbedding
 # not to use this class
 # split the embedding and decoder layer
 class Decoder(nn.Module):
-    def __init__(self, max_len, dec_voc_size, dim, ffn_hidden, n_head, drop_prob, dec_layers, device=None):
+    def __init__(self, max_len, dec_voc_size, dim, ffn_hidden_ratio, n_head, drop_prob, dec_layers, device=None):
         super().__init__()
         self.emb = TokenEmbedding(vocab_size=dec_voc_size,
                                   dim=dim,
@@ -15,7 +15,7 @@ class Decoder(nn.Module):
                                   device=device)
 
         self.layers = nn.ModuleList([DecoderLayer(dim=dim,
-                                                  ffn_hidden=ffn_hidden,
+                                                  ffn_hidden_ratio=ffn_hidden_ratio,
                                                   n_head=n_head,
                                                   drop_prob=drop_prob,
                                                   device=device)
