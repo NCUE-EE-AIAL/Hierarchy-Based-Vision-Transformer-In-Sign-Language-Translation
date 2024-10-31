@@ -22,11 +22,21 @@ def get_bleu(bp, precisions):
     bleu2 = bp * math.exp((1 / 2) * (math.log(precisions[0]) + math.log(precisions[1])))
 
     # Calculate BLEU-3 using geometric mean of P₁, P₂, and P₃
-    bleu3 = bp * math.exp((1 / 3) * (math.log(precisions[0]) + math.log(precisions[1]) + math.log(precisions[2])))
+    bleu3 = bp * math.exp(
+        (1 / 3)
+        * (math.log(precisions[0]) + math.log(precisions[1]) + math.log(precisions[2]))
+    )
 
     # Calculate BLEU-4 using geometric mean of P₁, P₂, P₃, and P₄
-    bleu4 = bp * math.exp((1 / 4) * (
-                math.log(precisions[0]) + math.log(precisions[1]) + math.log(precisions[2]) + math.log(precisions[3])))
+    bleu4 = bp * math.exp(
+        (1 / 4)
+        * (
+            math.log(precisions[0])
+            + math.log(precisions[1])
+            + math.log(precisions[2])
+            + math.log(precisions[3])
+        )
+    )
 
     return bleu1, bleu2, bleu3, bleu4
 
@@ -39,32 +49,29 @@ def idx_to_word(x, vocab):
         words = []
         for i in sentence:
             word = vocab.lookup_token(i)  # Retrieve the word using the index
-            if '<eos>' in word:  # Stop if the end of sentence token is reached
+            if "<eos>" in word:  # Stop if the end of sentence token is reached
                 break
 
-            if '<' not in word:  # Exclude words with '<', typically special tokens like <pad>, <sos>, <eos>
+            if (
+                "<" not in word
+            ):  # Exclude words with '<', typically special tokens like <pad>, <sos>, <eos>
                 words.append(word)  # Append valid words to the list
 
-        words = ''.join(words)  # Join the words to form a sentence
+        words = "".join(words)  # Join the words to form a sentence
         batch_words.append(words)  # Append valid words to the list
 
     return batch_words
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from transformers import T5Tokenizer
     import torch
 
     # Initialize the tokenizer
-    tokenizer = T5Tokenizer.from_pretrained('t5-small')
+    tokenizer = T5Tokenizer.from_pretrained("t5-small")
 
     sentence = "This is a test."
-    tokens = tokenizer(
-        sentence,
-        padding=True,
-        truncation=True,
-        return_tensors="pt"
-    )
+    tokens = tokenizer(sentence, padding=True, truncation=True, return_tensors="pt")
     # Example token IDs, including special tokens
     token_ids = torch.randint(0, 2, (1, 32, 32))
     print(token_ids[0])

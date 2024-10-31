@@ -2,11 +2,11 @@ import torch
 
 # GPU device setting
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print('device :', device)
+print("device :", device)
 
 # load pre-trained model or not
 pretrained = False
-pretrained_model = 'result/3.85_200epoch/model-166-3.9138.pt'
+pretrained_model = "result/3.85_200epoch/model-166-3.9138.pt"
 
 # model parameter setting
 batch_size = 16
@@ -31,20 +31,20 @@ T_0 = 20
 end_lr = 1e-7
 
 # optimizer parameter setting
-init_lr = 1e-3
+init_lr = 1e-2
 betas = (0.9, 0.95)
-warmup = 6
-epoch = 205
+warmup = 10
+epoch = 200
 clip = 1.0
 weight_decay = 1e-4
-inf = float('inf')
+inf = float("inf")
 # input shape -> (batch_size, channels, frames, height, width)
 
 # file path setting
-h2s_train_dir = 'dataset/how2sign/train_2D_Keypoints_85'
-h2s_val_dir = 'dataset/how2sign/val_2D_Keypoints_85'
-h2s_test_dir = 'dataset/how2sign/test_2D_Keypoints_85'
-yt_asl_dir = 'dataset/youtube_3D_keypoints'
+h2s_train_dir = "dataset/how2sign/train_2D_Keypoints_85"
+h2s_val_dir = "dataset/how2sign/val_2D_Keypoints_85"
+h2s_test_dir = "dataset/how2sign/test_2D_Keypoints_85"
+yt_asl_dir = "dataset/youtube_3D_keypoints"
 
 # Prepare the information as a formatted string
 info = f"""
@@ -84,6 +84,6 @@ weight_decay = {weight_decay}
 inf = {inf}
 """
 
-f = open('result/parameters.txt', 'w')
+f = open("result/parameters.txt", "w")
 f.write(str(info))
 f.close()

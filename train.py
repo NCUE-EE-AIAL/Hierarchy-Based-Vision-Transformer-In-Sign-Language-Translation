@@ -15,6 +15,7 @@ from util.checkpoints import save_best_models, get_best_models
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
+
 def initialize_weights(m):
     # if hasattr(m, 'weight') and m.weight.dim() > 1:
     # nn.init.kaiming_uniform_(m.weight.data)  # He initialization
@@ -29,42 +30,62 @@ def initialize_weights(m):
         nn.init.normal_(m.weight, mean=0.0, std=0.02)
 
 
-model = HierarchicalTransformer(pad_idx=pad_token_id,
-                             image_size=image_size,
-                             image_patch_size=image_patch_size,
-                             max_frames=max_frames,
-                             frame_patch_size=frame_patch_size,
-                             dim=dim,
-                             ffn_hidden_ratio=ffn_hidden_ratio,
-                             n_head=n_heads,
-                             drop_prob=drop_prob,
-                             max_len=max_len,
-                             enc_layers=enc_layers,
-                             dec_layers=dec_layers,
-                             dec_voc_size=dec_voc_size,
-                             device=device)
+model = HierarchicalTransformer(
+    pad_idx=pad_token_id,
+    image_size=image_size,
+    image_patch_size=image_patch_size,
+    max_frames=max_frames,
+    frame_patch_size=frame_patch_size,
+    dim=dim,
+    ffn_hidden_ratio=ffn_hidden_ratio,
+    n_head=n_heads,
+    drop_prob=drop_prob,
+    max_len=max_len,
+    enc_layers=enc_layers,
+    dec_layers=dec_layers,
+    dec_voc_size=dec_voc_size,
+    device=device,
+)
 
 
-print(f'The model has {count_parameters(model):,} trainable parameters')
+print(f"The model has {count_parameters(model):,} trainable parameters")
 model.apply(initialize_weights)
 
 # Load the pre-trained model weights
 if pretrained:
     pretrained_state_dict = torch.load(pretrained_model, map_location=device)
     model_state_dict = model.state_dict()
-    pretrained_dict = {k: v for k, v in pretrained_state_dict.items() if k in model_state_dict and v.size() == model_state_dict[k].size()}
+    pretrained_dict = {
+        k: v
+        for k, v in pretrained_state_dict.items()
+        if k in model_state_dict and v.size() == model_state_dict[k].size()
+    }
     model_state_dict.update(pretrained_dict)
     model.load_state_dict(model_state_dict)
 
-optimizer = Adam(params=model.parameters(),
-                 lr=init_lr,
-                 weight_decay=weight_decay,
-                 betas=betas)
+optimizer = Adam(
+    params=model.parameters(), lr=init_lr, weight_decay=weight_decay, betas=betas
+)
 
-scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=T_0, T_mult=1, eta_min=end_lr)
+# Define the LinearLR scheduler for a warm-up period, e.g., first 5 epochs
+linear_scheduler = optim.lr_scheduler.LinearLR(
+    optimizer, start_factor=0.01, total_iters=warmup
+)
 
-criterion = nn.CrossEntropyLoss(ignore_index=pad_token_id,
-                                label_smoothing=label_smoothing)
+# Define the CosineAnnealingLR scheduler for the rest of the epochs
+cosine_scheduler = optim.lr_scheduler.CosineAnnealingLR(
+    optimizer, T_max=T_0, eta_min=end_lr
+)
+
+# Combine them with SequentialLR
+scheduler = optim.lr_scheduler.SequentialLR(
+    optimizer, schedulers=[linear_scheduler, cosine_scheduler], milestones=[warmup]
+)
+
+criterion = nn.CrossEntropyLoss(
+    ignore_index=pad_token_id, label_smoothing=label_smoothing
+)
+
 
 def train(model, iterator, optimizer, criterion, clip):
     model.train()
@@ -89,7 +110,7 @@ def train(model, iterator, optimizer, criterion, clip):
 
         epoch_loss += loss.item()
         if i % 200 == 0:  # Adjust the frequency as needed
-            print(f'step: {round((i / len(iterator)) * 100, 2)}% , loss: {loss.item()}')
+            print(f"step: {round((i / len(iterator)) * 100, 2)}% , loss: {loss.item()}")
 
     return epoch_loss / len(iterator)
 
@@ -114,20 +135,26 @@ def evaluate(model, iterator, criterion):
 
             try:
                 trg_words = idx_to_word(y, vocabulary)
-                trg_words = [[item.replace('▁', ' ')] for item in trg_words] # t5 tokenizer includes '▁'
+                # t5 tokenizer includes '▁'
+                trg_words = [[item.replace("▁", " ")] for item in trg_words]
                 # print('trg_words:', trg_words)
 
                 output_idx = output.max(dim=2)[1]
                 output_words = idx_to_word(output_idx, vocabulary)
-                output_words = [item.replace('▁', ' ') for item in output_words] # t5 tokenizer includes '▁'
+                # t5 tokenizer includes '▁'
+                output_words = [item.replace("▁", " ") for item in output_words]
                 # print('output_words:', output_words)
 
-                results = sacrebleu.compute(predictions=output_words,
-                                            references=trg_words,
-                                            tokenize="13a",
-                                            smooth_method="exp")
+                results = sacrebleu.compute(
+                    predictions=output_words,
+                    references=trg_words,
+                    tokenize="13a",
+                    smooth_method="exp",
+                )
 
-                bleu_1, bleu_2, bleu_3, bleu = get_bleu(results["bp"], results["precisions"])
+                bleu_1, bleu_2, bleu_3, bleu = get_bleu(
+                    results["bp"], results["precisions"]
+                )
 
                 total_bleu_1.append(bleu_1)
                 total_bleu_2.append(bleu_2)
@@ -138,9 +165,15 @@ def evaluate(model, iterator, criterion):
                 print(f"Error calculating BLEU for batch {i}, item {e}")
                 pass
 
-            total_bleu_1 = sum(total_bleu_1) / len(total_bleu_1) if total_bleu_1 else 0.0
-            total_bleu_2 = sum(total_bleu_2) / len(total_bleu_2) if total_bleu_2 else 0.0
-            total_bleu_3 = sum(total_bleu_3) / len(total_bleu_3) if total_bleu_3 else 0.0
+            total_bleu_1 = (
+                sum(total_bleu_1) / len(total_bleu_1) if total_bleu_1 else 0.0
+            )
+            total_bleu_2 = (
+                sum(total_bleu_2) / len(total_bleu_2) if total_bleu_2 else 0.0
+            )
+            total_bleu_3 = (
+                sum(total_bleu_3) / len(total_bleu_3) if total_bleu_3 else 0.0
+            )
             total_bleu = sum(total_bleu) / len(total_bleu) if total_bleu else 0.0
 
             batch_bleu_1.append(total_bleu_1)
@@ -149,13 +182,24 @@ def evaluate(model, iterator, criterion):
             batch_bleu.append(total_bleu)
 
             if i % 25 == 0:
-                print('step :', round((i / len(iterator)) * 100, 2), '% , loss :', loss.item())
+                print(
+                    "step :",
+                    round((i / len(iterator)) * 100, 2),
+                    "% , loss :",
+                    loss.item(),
+                )
 
     batch_bleu_1 = sum(batch_bleu_1) / len(batch_bleu_1) if batch_bleu_1 else 0.0
     batch_bleu_2 = sum(batch_bleu_2) / len(batch_bleu_2) if batch_bleu_2 else 0.0
     batch_bleu_3 = sum(batch_bleu_3) / len(batch_bleu_3) if batch_bleu_3 else 0.0
     batch_bleu = sum(batch_bleu) / len(batch_bleu) if batch_bleu else 0.0
-    return epoch_loss / len(iterator), batch_bleu_1, batch_bleu_2, batch_bleu_3, batch_bleu
+    return (
+        epoch_loss / len(iterator),
+        batch_bleu_1,
+        batch_bleu_2,
+        batch_bleu_3,
+        batch_bleu,
+    )
 
 
 def run(total_epoch, best_loss):
@@ -163,48 +207,49 @@ def run(total_epoch, best_loss):
     for step in range(total_epoch):
         start_time = time.time()
         train_loss = train(model, train_iter, optimizer, criterion, clip)
-        valid_loss, bleu_1, bleu_2, bleu_3, bleu = evaluate(model, valid_iter, criterion)
+        valid_loss, bleu_1, bleu_2, bleu_3, bleu = evaluate(
+            model, valid_iter, criterion
+        )
         end_time = time.time()
 
-        train_val_loss.append(f'{step},{train_loss},{valid_loss}')
-        bleus.append(f'{step},{bleu_1},{bleu_2},{bleu_3},{bleu}')
+        train_val_loss.append(f"{step},{train_loss},{valid_loss}\n")
+        bleus.append(f"{step},{bleu_1},{bleu_2},{bleu_3},{bleu}\n")
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
-        if step > warmup:
-            scheduler.step()
+        scheduler.step()
 
         # save the best models
-        save_best_models(model, bleu, step, save_dir='result', max_models=2)
+        save_best_models(model, bleu, step, save_dir="result", max_models=2)
 
-        f = open('result/train_val_loss.txt', 'w')
+        f = open("result/train_val_loss.txt", "w")
         f.write(str(train_val_loss))
         f.close()
 
-        f = open('result/bleus.txt', 'w')
+        f = open("result/bleus.txt", "w")
         f.write(str(bleus))
         f.close()
 
-        print(f'Epoch: {step + 1} | Time: {epoch_mins}m {epoch_secs}s')
-        print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
-        print(f'\tVal Loss: {valid_loss:.3f} |  Val PPL: {math.exp(valid_loss):7.3f}')
-        print(f'\tBLEU-1 Score: {bleu_1:.3f} |  BLEU-2 Score: {bleu_2:.3f}')
-        print(f'\tBLEU-3 Score: {bleu_3:.3f} |  BLEU Score: {bleu:.3f}')
+        print(f"Epoch: {step + 1} | Time: {epoch_mins}m {epoch_secs}s")
+        print(
+            f"\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}"
+        )
+        print(f"\tVal Loss: {valid_loss:.3f} |  Val PPL: {math.exp(valid_loss):7.3f}")
+        print(f"\tBLEU-1 Score: {bleu_1:.3f} |  BLEU-2 Score: {bleu_2:.3f}")
+        print(f"\tBLEU-3 Score: {bleu_3:.3f} |  BLEU Score: {bleu:.3f}")
 
     # test the final result
-    best_model = get_best_models(save_dir='result')
+    best_model = get_best_models(save_dir="result")
     model.load_state_dict(torch.load(best_model))
 
     test_loss, bleu_1, bleu_2, bleu_3, bleu = evaluate(model, test_iter, criterion)
-
-    f = open('result/test_result.txt', 'w')
-    f.write(f'Test Loss: {test_loss}\nbleu-1: {bleu_1}\nbleu-2: {bleu_2}\nbleu-3: {bleu_3}\nbleu: {bleu}')
-    f.close()
+    test_result = f"Test Loss: {test_loss}\nbleu-1: {bleu_1}\nbleu-2: {bleu_2}\nbleu-3: {bleu_3}\nbleu: {bleu}"
 
     test_loss, bleu_1, bleu_2, bleu_3, bleu = evaluate(model, valid_iter, criterion)
-
-    f = open('result/valid_result.txt', 'w')
-    f.write(f'Test Loss: {test_loss}\nbleu-1: {bleu_1}\nbleu-2: {bleu_2}\nbleu-3: {bleu_3}\nbleu: {bleu}')
+    valid_result = f"Valid Loss: {test_loss}\nbleu-1: {bleu_1}\nbleu-2: {bleu_2}\nbleu-3: {bleu_3}\nbleu: {bleu}"
+    f = open("result/test_valid_result.txt", "w")
+    f.write(f"Test Result\n{test_result}\n\nValid Result\n{valid_result}")
     f.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     run(total_epoch=epoch, best_loss=inf)

@@ -5,12 +5,15 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
+
 class YoutubeASLDataset(Dataset):
     def __init__(self, files_dir, tokenizer, seq_len, time_len, vocabulary=None):
         self.seq_len = seq_len
         self.time_len = time_len
-        self.npy_files = self.find_files(files_dir, pattern='**/*.npy')
-        self.csv_file = self.find_files(files_dir, pattern='**/*.csv')[0]  # should be only one csv file
+        self.npy_files = self.find_files(files_dir, pattern="**/*.npy")
+        self.csv_file = self.find_files(files_dir, pattern="**/*.csv")[
+            0
+        ]  # should be only one csv file
         self.tokenizer = tokenizer
         self.vocab = vocabulary
 
@@ -28,7 +31,7 @@ class YoutubeASLDataset(Dataset):
         num_frames = data_array.shape[0]
         if num_frames > self.time_len:
             # Truncate to time_len frames
-            data_array = data_array[:self.time_len, :]
+            data_array = data_array[: self.time_len, :]
         elif num_frames < self.time_len:
             # Pad with zeros
             padding = np.zeros((self.time_len - num_frames, self.seq_len))
@@ -40,16 +43,19 @@ class YoutubeASLDataset(Dataset):
         return x
 
     def load_y(self):
-        data = pd.read_csv(self.csv_file, delimiter='\t', on_bad_lines='skip')
-        df = data[['SENTENCE_NAME', 'SENTENCE']]
+        data = pd.read_csv(self.csv_file, delimiter="\t", on_bad_lines="skip")
+        df = data[["SENTENCE_NAME", "SENTENCE"]]
         sentence_dict = pd.Series(df.SENTENCE.values, index=df.SENTENCE_NAME).to_dict()
 
         return sentence_dict
 
     def get_y(self, x_base_path):
-        sentence = self.sentence_dict.get(x_base_path, '<pad>')
+        sentence = self.sentence_dict.get(x_base_path, "<pad>")
         sentence = self.tokenizer.tokenize_en(sentence)
-        y = [self.vocab[token] if token in self.vocab else self.vocab['<pad>'] for token in sentence]
+        y = [
+            self.vocab[token] if token in self.vocab else self.vocab["<pad>"]
+            for token in sentence
+        ]
         y = torch.tensor(y, dtype=torch.long)
 
         return y
