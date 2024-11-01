@@ -7,9 +7,12 @@ from torch.utils.data import Dataset
 
 
 class How2signDataset(Dataset):
-    def __init__(self, files_dir, tokenizer, seq_len, time_len, vocabulary=None):
+    def __init__(
+        self, files_dir, tokenizer, seq_len, time_len, max_output, vocabulary=None
+    ):
         self.seq_len = seq_len
         self.time_len = time_len
+        self.max_output = max_output
         self.npy_files = self.find_files(files_dir, pattern="**/*.npy")
         self.csv_file = self.find_files(files_dir, pattern="**/*.csv")[0]
         self.tokenizer = tokenizer
@@ -25,12 +28,6 @@ class How2signDataset(Dataset):
                 y = self.process_label(base_name)
                 self.labels_cache[base_name] = y
 
-    def process_label(self, base_name):
-        sentence = self.sentence_dict.get(base_name, "<pad>")
-        tokens = self.tokenizer.tokenize_en(sentence)
-        y = [self.vocab.get(token, self.vocab["<pad>"]) for token in tokens]
-        return torch.tensor(y, dtype=torch.long)
-
     def find_files(self, directory, pattern):
         """Recursively finds all files matching the pattern and returns every other file."""
         return glob(os.path.join(directory, pattern), recursive=True)
@@ -38,10 +35,16 @@ class How2signDataset(Dataset):
     def process_label(self, base_name):
         sentence = self.sentence_dict.get(base_name, "<unk>")
         sentence = self.tokenizer.tokenize_en(sentence)
-        y = [
+
+        y = np.full(self.max_output, self.vocab["<pad>"], dtype=np.int64)
+        token = [
             self.vocab[token] if token in self.vocab else self.vocab["<unk>"]
             for token in sentence
         ]
+        if len(token) > self.max_output:
+            y[: self.max_output] = token[: self.max_output]
+        else:
+            y[: len(token)] = token[:]
 
         return torch.tensor(y, dtype=torch.long)
 

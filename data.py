@@ -18,7 +18,11 @@ tokenizer = Tokenizer()
 
 # get vocabulary
 train_dataset = How2signDataset(
-    files_dir=h2s_train_dir, tokenizer=tokenizer, seq_len=seq_len, time_len=max_frames
+    files_dir=h2s_train_dir,
+    tokenizer=tokenizer,
+    seq_len=seq_len,
+    time_len=max_frames,
+    max_output=max_output,
 )
 data = train_dataset.load_y().values()
 vocabulary = get_vocabulary(tokenizer, data, vocab_file="vocab.pth")
@@ -31,6 +35,7 @@ train_dataset = How2signDataset(
     vocabulary=vocabulary,
     seq_len=seq_len,
     time_len=max_frames,
+    max_output=max_output,
 )
 val_dataset = How2signDataset(
     files_dir=h2s_val_dir,
@@ -38,6 +43,7 @@ val_dataset = How2signDataset(
     vocabulary=vocabulary,
     seq_len=seq_len,
     time_len=max_frames,
+    max_output=max_output,
 )
 test_dataset = How2signDataset(
     files_dir=h2s_test_dir,
@@ -45,6 +51,7 @@ test_dataset = How2signDataset(
     vocabulary=vocabulary,
     seq_len=seq_len,
     time_len=max_frames,
+    max_output=max_output,
 )
 
 # YoutubeASL dataset
@@ -53,23 +60,10 @@ test_dataset = How2signDataset(
 pad_token_id = vocabulary["<pad>"]
 dec_voc_size = len(vocabulary)
 
-
-def collate_fn(batch):
-    # Assuming each item in batch is a tuple (input, target)
-    inputs, targets = zip(*batch)  # Unpack inputs and targets
-
-    # Process inputs and targets as tensors
-    inputs = torch.stack(inputs)  # Assuming inputs are tensors
-    padded_targets = pad_sequence(targets, batch_first=True, padding_value=pad_token_id)
-
-    return inputs, padded_targets
-
-
 train_iter = DataLoader(
     train_dataset,
     batch_size=batch_size,
     shuffle=True,
-    collate_fn=collate_fn,
     num_workers=4,
     pin_memory=True,
     persistent_workers=True,
@@ -78,7 +72,6 @@ valid_iter = DataLoader(
     val_dataset,
     batch_size=batch_size,
     shuffle=False,
-    collate_fn=collate_fn,
     num_workers=0,
     pin_memory=True,
 )
@@ -86,7 +79,6 @@ test_iter = DataLoader(
     test_dataset,
     batch_size=batch_size,
     shuffle=False,
-    collate_fn=collate_fn,
     num_workers=0,
     pin_memory=True,
 )

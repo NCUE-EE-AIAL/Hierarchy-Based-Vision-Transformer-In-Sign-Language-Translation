@@ -9,7 +9,7 @@ pretrained = False
 pretrained_model = "result/3.85_200epoch/model-166-3.9138.pt"
 
 # model parameter setting
-batch_size = 16
+batch_size = 32
 seq_len = 255
 image_size = (1, seq_len)
 image_patch_size = (1, seq_len)
@@ -21,7 +21,7 @@ dec_layers = 4
 n_heads = (4, 4, 4)  # not must be double
 ffn_hidden_ratio = 4
 drop_prob = 0.2
-max_len = 256
+max_output = 256
 
 # loss
 label_smoothing = 0.2
@@ -65,7 +65,7 @@ dec_layers = {dec_layers}
 n_heads = {n_heads}
 ffn_hidden_ratio = {ffn_hidden_ratio}
 drop_prob = {drop_prob}
-max_len = {max_len}
+max_output = {max_output}
 
 # loss
 label_smoothing = {label_smoothing}
